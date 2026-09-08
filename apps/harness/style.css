@@ -46,7 +46,7 @@ canvas:focus-visible { outline: 1px solid #7c8da6; outline-offset: -1px; }
 #controls-summary { display: flex; gap: 8px 20px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
 kbd { font: 12px ui-monospace, Consolas, monospace; color: #d6dce5; padding: 0 2px; }
 aside { display: grid; gap: 18px; min-width: 0; }
-.settings-button { justify-self: end; height: 32px; }
+.settings-button { justify-self: end; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding-block: 0; line-height: 1; }
 .card { min-width: 0; border-top: 1px solid var(--line); padding-top: 14px; }
 .card-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .slot-heading, .room-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

@@ -137,3 +137,11 @@ active sessions register beforeunload; browsers display their own generic text.
 Room controls derive disabled state from current readiness/connection state and
 resynchronize on pageshow. The Room tooltip contains the multiplayer sequence.
 See experiment 007 for automated lifecycle evidence.
+
+Deployment preference (2026-09-08): use native Cloudflare Workers Builds from
+GitHub `main` for routine changes; do not manually deploy each UI update. See
+`deployment/README.md`. Never add ROM bytes to GitHub. `build:ci` retrieves pinned
+inputs from the separate `quetzal-assets` static Worker and verifies the committed
+checksum manifest. This Worker is for explicitly published build artifacts, not
+routine code deployment. Core/frontend C changes require a matching rebuilt
+artifact release; preserve previous version directories for rollback builds.

@@ -8,6 +8,8 @@
     "prepare:roms": "node scripts/prepare-roms.mjs",
     "test": "node --test tests/*.test.mjs",
     "prepare:site": "node scripts/prepare-site.mjs",
+    "build:ci": "node scripts/prepare-site.mjs --remote && npm run relay:check && node --test tests/controls.test.mjs tests/saves.test.mjs tests/local-link.test.mjs tests/relay-protocol.test.mjs tests/deploy-assets.test.mjs",
+    "prepare:deploy-assets": "node scripts/deploy-assets.mjs --package",
     "relay:dev": "wrangler dev --config services/relay/wrangler.jsonc --local",
     "relay:types": "wrangler types --config services/relay/wrangler.jsonc services/relay/worker-configuration.d.ts",
     "relay:check": "tsc -p services/relay/tsconfig.json",

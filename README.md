@@ -44,3 +44,7 @@ rejoin in Quetzal after a departure. The host leaving closes the room.
 For the WebSocket playtest, run `npm run prepare:site`, then `npm run relay:dev`
 and open http://127.0.0.1:8787. See [relay setup and tests](services/relay/README.md).
 Export saves before moving between ports or domains; browser storage is origin-specific.
+
+Production deploys use Cloudflare Workers Builds from GitHub `main`. See
+[deployment setup](deployment/README.md). ROM and emulator artifacts stay in
+Cloudflare; the public repository contains only source and a checksum manifest.

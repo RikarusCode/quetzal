@@ -1,28 +1,33 @@
 import {mkdirSync,readFileSync,writeFileSync,copyFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {gzipSync} from 'node:zlib';
+import {gzipSync,gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {BUILD_ID,ROM_SHA256,ROM_SIZE} from '../apps/harness/relay-protocol.mjs';
+import {fetchDeployAssets} from './deploy-assets.mjs';
 const out=resolve('dist/site');mkdirSync(out,{recursive:true});
+const remote=process.argv.includes('--remote');
+if(remote)await fetchDeployAssets(out);
 for(const name of ['index.html','style.css','main.mjs','controls.mjs','volume.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
 mkdirSync(resolve(out,'core'),{recursive:true});
-const build=JSON.parse(readFileSync('apps/harness/core/build.json','utf8'));
+const build=JSON.parse(readFileSync(remote?resolve(out,'core/build.json'):'apps/harness/core/build.json','utf8'));
 if(build.serial!=='mul_poke'||build.commit!=='8d268a6bb2cd799f8f2791ebb544a7ef550cfc6f')throw Error('Rebuild the pinned link-cable core first.');
-for(const name of ['gpsp.mjs','gpsp.wasm','COPYING','build.json'])copyFileSync(resolve('apps/harness/core',name),resolve(out,'core',name));
-const rom=readFileSync('pokemon emerald/PokemonQuetzalEnglishAlpha8v4.gba');
+if(!remote)for(const name of ['gpsp.mjs','gpsp.wasm','COPYING','build.json'])copyFileSync(resolve('apps/harness/core',name),resolve(out,'core',name));
+const asset=`game/quetzal-${ROM_SHA256.slice(0,16)}.gba.gz`;
+const compressed=remote?readFileSync(resolve(out,asset)):gzipSync(readFileSync('pokemon emerald/PokemonQuetzalEnglishAlpha8v4.gba'),{level:9});
+const rom=gunzipSync(compressed,{maxOutputLength:ROM_SIZE});
 if(rom.length!==ROM_SIZE||createHash('sha256').update(rom).digest('hex')!==ROM_SHA256)throw Error('Unexpected Quetzal content.');
-const compressed=gzipSync(rom,{level:9});
 if(compressed.length>25*1024*1024)throw Error('Compressed game exceeds the static asset limit; use object storage.');
 mkdirSync(resolve(out,'game'),{recursive:true});
-const asset=`game/quetzal-${ROM_SHA256.slice(0,16)}.gba.gz`;
 writeFileSync(resolve(out,asset),compressed);
 writeFileSync(resolve(out,'game-manifest.json'),JSON.stringify({build:BUILD_ID,url:'/'+asset,encoding:'gzip',size:ROM_SIZE,sha256:ROM_SHA256},null,2)+'\n');
 writeFileSync(resolve(out,'_headers'),`/*\n  Cross-Origin-Opener-Policy: same-origin\n  Cross-Origin-Embedder-Policy: require-corp\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  Cache-Control: no-cache\n/game/*\n  Cache-Control: public, max-age=31536000, immutable\n  Content-Type: application/gzip\n`);
 // Supply the actual pinned upstream source and our frontend/build materials.
 mkdirSync(resolve(out,'source'),{recursive:true});mkdirSync('build',{recursive:true});
-execFileSync('git',['-C',resolve('.local/src/gpsp'),'archive','--format=tar','--output',resolve('build/gpsp-source.tar'),build.commit]);
-writeFileSync(resolve(out,'source/gpsp-source.tar.gz'),gzipSync(readFileSync('build/gpsp-source.tar')));
+if(!remote){
+  execFileSync('git',['-C',resolve('.local/src/gpsp'),'archive','--format=tar','--output',resolve('build/gpsp-source.tar'),build.commit]);
+  writeFileSync(resolve(out,'source/gpsp-source.tar.gz'),gzipSync(readFileSync('build/gpsp-source.tar')));
+}
 for(const [src,name] of [['packages/emulator/host.c','host.c'],['scripts/build-emulator.mjs','build-emulator.mjs'],['docs/experiments/002-emulator-harness.md','BUILD.md']])copyFileSync(src,resolve(out,'source',name));
 writeFileSync(resolve(out,'source/README.txt'),`gpSP is GPL-2.0-or-later; see /core/COPYING.\nPinned upstream commit: ${build.commit}\nThe archive contains the upstream source. host.c is our linked frontend.\nBuild with build-emulator.mjs, Emscripten ${build.emscripten}, with source in .local/src/gpsp and SDK in .local/tools/emsdk.\nThe browser JavaScript modules served by this site are their own source. No ROM is included in the source archive.\n`);
 console.log(`Prepared site: game ${compressed.length} compressed bytes; build ${BUILD_ID}`);

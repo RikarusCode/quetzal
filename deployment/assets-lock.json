@@ -1,0 +1,56 @@
+{
+  "build": "quetzal-8v4-e9fc9cf506ad11db-gpsp-8d268a6-mul_poke-v2",
+  "origin": "https://quetzal-assets.rikcroy.workers.dev/",
+  "sources": {
+    "packages/emulator/host.c": {
+      "size": 5306,
+      "sha256": "0fc5dced64695ccbea2de60fa58c36e24efb6a27cbee91e56a65e6518f5cc4aa"
+    },
+    "scripts/build-emulator.mjs": {
+      "size": 2849,
+      "sha256": "70c1ab3a15a2283c3f533ffd64c48a8ff2e2d1614842013e87341400078b9214"
+    }
+  },
+  "files": {
+    "core/gpsp.mjs": {
+      "size": 63860,
+      "sha256": "f7b380d95eb6dc3de56df66e735432d21a295bafc31d93bf9f3fbc1b3cf1752b"
+    },
+    "core/gpsp.wasm": {
+      "size": 430471,
+      "sha256": "91448ad5b8ab7025d32faeb90372a7ab426304d9607e0445a77398424547e75e"
+    },
+    "core/COPYING": {
+      "size": 18431,
+      "sha256": "189b1af95d661151e054cea10c91b3d754e4de4d3fecfb074c1fb29476f7167b"
+    },
+    "core/build.json": {
+      "size": 167,
+      "sha256": "0bb5513a4f42646cc507d5710732396640d2267a054dec50f44ded4bef1c013e"
+    },
+    "game/quetzal-e9fc9cf506ad11db.gba.gz": {
+      "size": 14518147,
+      "sha256": "00c371f44999c07d1b3f50f9c94533f8107e37093f54751a49f378896122bcf3"
+    },
+    "source/gpsp-source.tar.gz": {
+      "size": 469452,
+      "sha256": "75a5db8fc6bff76d41a83a62b40b35bda31617329d21a4bc275cd27a37aca9c9"
+    },
+    "source/host.c": {
+      "size": 5306,
+      "sha256": "0fc5dced64695ccbea2de60fa58c36e24efb6a27cbee91e56a65e6518f5cc4aa"
+    },
+    "source/build-emulator.mjs": {
+      "size": 2849,
+      "sha256": "70c1ab3a15a2283c3f533ffd64c48a8ff2e2d1614842013e87341400078b9214"
+    },
+    "source/BUILD.md": {
+      "size": 4649,
+      "sha256": "cedb8f41bbc982985f49a121e0ec27d9e09c7675e2bc3d51b26451c8357f6434"
+    },
+    "source/README.txt": {
+      "size": 409,
+      "sha256": "6fa275827546a07f61c7e24996f4c6a24e88f50489bb8cb1d7f330eae7a0f376"
+    }
+  }
+}
