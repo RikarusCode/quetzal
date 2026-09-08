@@ -4,10 +4,7 @@ A browser player for **Pokémon Quetzal**, the Pokémon Emerald ROM hack with
 multiplayer and expanded gameplay features. Play solo or connect with friends
 through shared rooms, with local saves and an interface built around the game.
 
-**[Play Quetzal](https://quetzal.rikcroy.workers.dev)**
-
-The site loads the supported game version automatically. There is no emulator
-installation, ROM upload, or patching step for players.
+The site loads the supported game version automatically.
 
 ## Features
 
@@ -27,7 +24,7 @@ that's all you need to do.
 
 To play together:
 
-1. Each player starts a game session and reaches the in-game menu.
+1. Each player starts a game session and progresses past the first few interactions until they can access the in-game menu.
 2. One player selects **Create room** and shares the code or invite link.
 3. The other players join the room and check that everyone appears in the roster.
 4. The host enables **Multiplayer** inside Quetzal, followed by the other players.
