@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "bytes": 16777216,
+    "sha256": "a9dec84dfe7f62ab2220bafaef7479da0929d066ece16a6885f6226db19085af",
+    "sha1": "f3ae088181bf583e55daf962a92bb46f4f1d07b7",
+    "headerTitle": "POKEMON EMER",
+    "gameCode": "BPEE",
+    "revision": 0,
+    "headerChecksumValid": true
+  },
+  "target": {
+    "bytes": 33554432,
+    "sha256": "e9fc9cf506ad11db7642e7d65774e2bb0e5f174eb9aceda725cd961ab9aee070",
+    "sha1": "6806c7146aff457a4be85ef2030e9ddcdb17b665",
+    "headerTitle": "PKM QUETZAL",
+    "gameCode": "BPEE",
+    "revision": 0,
+    "headerChecksumValid": true,
+    "labelFromFilename": "Quetzal English Alpha 8v4",
+    "releaseAuthenticity": "Not independently verified against an official release hash"
+  },
+  "patch": {
+    "file": "quetzal-english-alpha-8v4.bps",
+    "bytes": 13012569,
+    "sha256": "0f32af26e82be0a31fa016c864180b6fa85807fa2e492de5ae7a23ae4e0c556c"
+  },
+  "generator": {
+    "name": "Floating IPS",
+    "version": "198",
+    "executableSha256": "ca6b364ccb23ab83ff0f4458f589eac001e7baf74315decde73c878a8eb519fd",
+    "release": "https://github.com/Sir-Walrus/Flips/releases/tag/v198"
+  },
+  "verification": {
+    "byteForByteRoundTrip": true,
+    "wrongSourceRejected": true
+  },
+  "emulator": {
+    "coreCommit": null,
+    "biosMode": null,
+    "serialMode": null,
+    "runtimeTested": false
+  }
+}

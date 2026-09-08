@@ -1,0 +1,20 @@
+# Local game inputs and generated content
+/pokemon emerald/
+/.local/
+*.gba
+*.agb
+*.srm
+*.sav
+*.state
+*.state.*
+*.bps
+
+# Build tools and outputs
+/node_modules/
+/dist/
+/build/
+/apps/harness/core/
+*.log
+.env
+.env.*
+!.env.example
