@@ -1,33 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LocalLink} from '../apps/harness/local-link.mjs';
-function lab(t){
-  let time=0;const channels=[],pending=[];
-  const channelFactory=name=>{const c={name,postMessage(data){for(const other of channels)if(other!==c&&!other.closed&&other.name===name)pending.push(()=>{if(!other.closed)other.onmessage?.({data});});},close(){c.closed=true;}};channels.push(c);return c;};
-  function player(){
-    const states=[],starts=[],inbound=[];
-    const core={HEAPU8:new Uint8Array(65536),_host_link_start(id){starts.push(id);return 1;},_host_link_stop(){},_host_connected(){return 1;},_malloc(){return 0;},_free(){},_host_receive(ptr,len,id){inbound.push({bytes:this.HEAPU8.slice(ptr,ptr+len),id});}};
-    const link=new LocalLink({core,onState:s=>states.push(s),channelFactory,now:()=>time});t.after(()=>link.close());return {link,states,starts,inbound};
-  }
-  return {a:player(),b:player(),flush(){while(pending.length)pending.shift()();},advance(ms){time+=ms;}};
+import {newRoomCode} from '../apps/harness/relay-protocol.mjs';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function until(check){for(let i=0;i<300;i++){if(check())return;await sleep(10);}throw Error('Local room timed out');}
+function player(t){
+  const states=[],starts=[],accepted=[],inbound=[];
+  const core={HEAPU8:new Uint8Array(65536),_host_link_start(id){starts.push(id);return 1;},_host_link_stop(){},_host_connected(id){accepted.push(id);return 1;},_malloc(){return 0;},_free(){},_host_receive(ptr,len,id){inbound.push({bytes:this.HEAPU8.slice(ptr,ptr+len),id});}};
+  const link=new LocalLink({core,onState:s=>states.push(s)});t.after(()=>link.close());return {link,states,starts,accepted,inbound};
 }
-test('hosting/searching remain visible and waiting can be canceled',t=>{
-  const {a,b}=lab(t);a.link.start('room',0);b.link.start('other',1);
-  assert.deepEqual(a.states.map(s=>s.state),['hosting']);assert.deepEqual(b.states.map(s=>s.state),['searching']);
-  a.link.stop();b.link.stop();assert.equal(a.states.at(-1).state,'idle');assert.equal(b.states.at(-1).state,'idle');
+test('local room assigns four IDs, broadcasts to all peers and respects targeted packets',async t=>{
+  const players=Array.from({length:4},()=>player(t)),room=newRoomCode();
+  players[0].link.start(room,'create');await until(()=>players[0].link.state==='hosting');
+  for(const p of players.slice(1))p.link.start(room,'join');
+  await until(()=>players.every(p=>p.link.members.length===4));
+  assert.deepEqual(players.map(p=>p.link.id).sort(),[0,1,2,3]);assert.deepEqual(players[0].accepted.sort(),[1,2,3]);
+  const bytes=new Uint8Array(24);new DataView(bytes.buffer).setUint32(0,0x4d504b31);
+  for(const p of players)p.link.packet(5,bytes,65535);
+  await until(()=>players.every(p=>p.link.queue.length===3));
+  for(const p of players){assert.equal(p.inbound.length,0);p.link.drain();assert.equal(new Set(p.inbound.map(v=>v.id)).size,3);}
+  players[0].link.packet(5,bytes,players[3].link.id);await until(()=>players[3].link.queue.length===1);
+  assert.equal(players[1].link.queue.length,0);assert.equal(players[2].link.queue.length,0);
+  const oldEpoch=players[3].link.epoch;players[3].link.stop();
+  await until(()=>players.slice(0,3).every(p=>p.link.members.length===3));
+  assert.equal(players[0].link.state,'connected');assert.equal(players[0].starts.length,2,'Departure restarts native session');
+  players[3].link.start(room,'join');await until(()=>players.every(p=>p.link.members.length===4));
+  players[0].link.message({type:'packet',from:players[3].link.id,epoch:oldEpoch,toEpoch:players[0].link.epoch,bytes});assert.equal(players[0].link.queue.length,0);
+  players[0].link.stop();await until(()=>players.every(p=>p.link.state==='idle'));
 });
-test('join before host, handshake once, ordered packets, disconnect and rejoin',t=>{
-  const {a,b,flush}=lab(t);b.link.start('room',1);a.link.start('room',0);b.link.pulse();flush();
-  assert.equal(a.link.connected,true);assert.equal(b.link.connected,true);assert.deepEqual(a.starts,[0]);assert.deepEqual(b.starts,[1]);
-  a.link.packet(5,new Uint8Array([1,2]),65535);a.link.packet(5,new Uint8Array([3,4]),1);flush();
-  assert.equal(b.inbound.length,0,'Core receive waits for owning frame');b.link.drain();
-  assert.deepEqual(b.inbound.map(p=>Array.from(p.bytes)),[[1,2],[3,4]]);assert.equal(b.inbound[0].id,0);
-  const oldEpoch=a.link.epoch;b.link.stop();flush();assert.equal(a.link.state,'idle');assert.match(a.states.at(-1).reason,/Peer left/);
-  a.link.start('room',0);b.link.start('room',1);flush();assert.equal(b.link.connected,true);
-  b.link.message({type:'packet',from:0,epoch:oldEpoch,toEpoch:b.link.epoch,bytes:new Uint8Array([99])});assert.equal(b.link.queue.length,0);
-});
-test('timeout and failed core startup report the actual state',t=>{
-  const {a,b,flush,advance}=lab(t);a.link.start('room',0);b.link.start('room',1);flush();advance(5001);a.link.pulse();flush();
-  assert.equal(a.link.state,'idle');assert.match(a.states.at(-1).reason,/stopped responding/);assert.equal(b.link.state,'idle');
-  a.link.core._host_link_start=()=>0;a.link.start('room',0);assert.equal(a.link.state,'idle');assert.match(a.states.at(-1).reason,/could not start/);
+test('pending connections cancel and failed core starts report an error',async t=>{
+  const a=player(t);a.link.start(newRoomCode(),'join');assert.equal(a.link.state,'connecting');a.link.stop();assert.equal(a.link.state,'idle');
+  a.link.core._host_link_start=()=>0;a.link.start(newRoomCode(),'create');await until(()=>a.link.state==='idle');assert.match(a.states.at(-1).reason,/could not start/);
 });

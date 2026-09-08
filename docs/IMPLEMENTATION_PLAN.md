@@ -28,7 +28,8 @@ This replaces the original bring-your-own-ROM architecture. Existing local input
 and BPS experiments remain historical reproducibility records, not product work
 to finish. Automatic website-provided content loading is now implemented and
 verified in the deployment package and published at
-https://quetzal-playtest.rikcroy.workers.dev on 2026-09-08. Hosted WebSocket and
+https://quetzal.rikcroy.workers.dev on 2026-09-08 (renamed from quetzal-playtest).
+The old origin is retained for exporting browser-local saves. Hosted WebSocket and
 real WASM cable handshake tests passed; two-device gameplay acceptance remains
 open. See `experiments/004-websocket-relay.md` for measured evidence.
 
@@ -46,12 +47,20 @@ those rules from the promotional description. [S1-S3]
 
 Working defaults while preferences are pending:
 
-- Two players on desktop Chrome/Edge first; Android/iPhone and four players later.
+- Up to four players on desktop Chrome/Edge (user-requested scope update);
+  Android/iPhone gameplay support remains a later target.
 - Each player owns an independent save, including the ability to play solo.
 - Private friend sessions first; no public matchmaking or competitive economy.
 - Cloudflare is the preferred backend, contingent on transport measurements.
 - A shared run groups player saves and a pinned game version; it is not one
   merged cartridge save. Dedicated co-op slots can be offered later.
+
+Implemented scope update, 2026-09-08: dynamic browser-local save slots (one
+default, add/rename/remove, legacy A/B migration and cross-tab locks) and explicit
+Create room / Join room flows with four-player rosters. Protocol v2 preserves
+all-player broadcast and targeted routing. See experiment 005. Rooms have no
+save ownership or stored campaign state; remaining players rejoin in-game after
+a guest leaves, and host departure closes the room.
 
 ## 2. The feasibility answer
 

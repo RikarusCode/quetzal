@@ -50,8 +50,9 @@ onmessage=async({data:m})=>{
       link=new LocalLink({core,onState:data=>post('link',data),...(transport==='websocket'?{
         channelFactory:(_name,peer)=>new WebSocketChannel({...peer,endpoint:m.endpoint,delayMs:m.delayMs,jitterMs:m.jitterMs})
       }:{})});
-      link.start(m.room,m.id);
+      link.start(m.room,m.intent);
     }
+    else if(m.type==='stop-session'){running=false;buttons=0;pressed=0;link?.stop();post('stopped');}
     else if(m.type==='unlink')link.stop();
     else if(m.type==='export')post('export',{bytes:core.HEAPU8.slice(core._host_save(),core._host_save()+core._host_save_size())});
   }catch(error){post('error',{message:error.message});}

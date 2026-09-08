@@ -1,140 +1,122 @@
 # Manual gameplay tests
 
-Use these tests while implementation continues. Do not use an important existing
-save for the initial tests. The save-completion detector is still a stability
-heuristic. Export a backup after each successful test.
+Hosted site: https://quetzal.rikcroy.workers.dev
 
-## Start the local harness
+Moving from the previous `quetzal-playtest.rikcroy.workers.dev` address: export
+your saves there and import them here before Play. The old site is still available
+for that purpose. All players should use the new address and create a new room.
 
-Both local players now load Quetzal automatically, with no ROM picker or patching.
-The relay and packaged site run at http://127.0.0.1:8787 after `npm run prepare:site`
-and `npm run relay:dev`. This is the preferred environment for relay testing.
+Save and export a backup before refreshing an older build. Everyone should refresh
+for the four-player protocol update. If storage asks you to close other Quetzal
+tabs, close those tabs and reload; this allows the one-time database upgrade.
 
-The original save origin remains http://127.0.0.1:4173 (`npm start`). It can also
-connect to the local relay at `ws://127.0.0.1:8787/relay` without moving saves.
+## Save slots
 
-The current development session uses `node scripts/serve.mjs --local-fixture`.
-This explicitly enables reading the supplied test ROM over loopback; these links
-press Play automatically:
+A fresh browser has one slot, My trainer. Edit save slots lets you add slots,
+rename them or remove them after a deletion warning. Keep at least one slot.
+Existing A/B slots with saved progress migrate automatically with their bytes
+unchanged. Select a slot before Play. Reload to switch slots after starting a game.
+You can rename the active slot; you cannot remove it while it is running.
 
-- Trainer A: http://127.0.0.1:4173/?fixture=local&slot=A
-- Trainer B: http://127.0.0.1:4173/?fixture=local&slot=B
+Use Import an existing save before Play to import into the selected slot. Import
+asks before replacing existing progress. Export game save downloads that slot's
+cartridge save (.srm), including before Play when a stored save exists. An active
+slot cannot be opened, imported into or removed from another current-build tab.
 
-Both development servers bind to 127.0.0.1. The WebSocket relay is also deployed
-at https://quetzal-playtest.rikcroy.workers.dev. No account system exists.
+Save slots are independent of multiplayer roles. Two different computers can
+both use a slot called My trainer. Multiple windows in one browser must use
+different slots. Clearing site data clears browser-local saves; exported backups
+are separate. Port 4173, port 8787, workers.dev and different browser profiles
+have separate storage. Export/import to move progress between them. There is no
+account or cloud-save system yet.
 
-## Test the hosted relay on two devices
+## Rooms and four-player gameplay
 
-1. Export each trainer's save from the old browser/origin before switching.
-2. Both players open https://quetzal-playtest.rikcroy.workers.dev. Prefer separate
-   networks (for example, home Wi-Fi and another home's connection).
-3. Choose a save slot and import your own exported save before pressing
-   Play / Continue. Different devices have independent saves even with slot A
-   selected on both; if testing two windows on one browser, use A and B slots.
-4. Leave Connection on WebSocket relay and test delay/jitter at zero. The relay
-   address defaults to the hosted endpoint; no local server is needed.
-5. One player clicks Host · A and shares the room code. The other pastes it and
-   clicks Join · B. Wait for Transport connected on both pages.
-6. Enter Quetzal's multiplayer menu and follow the previously successful game
-   host/join flow. Confirm both trainers see and can move around each other.
-7. Play for 15–30 minutes, change maps and try an available shared interaction.
-   Save both trainers in-game, wait for local backup confirmation and export.
-8. Disconnect, refresh, continue each trainer, reconnect and join in-game again.
+1. On each device, select the desired save slot and press Play / Continue.
+   Leave Connection settings on Internet relay, with test delay and jitter at 0.
+2. One person clicks Create room. Their room code appears and hosting starts.
+   Use Copy code or Copy invite link to share it with up to three friends.
+3. Each guest clicks Join room, pastes the code and submits. Invite links prefill
+   this form; they do not automatically start the game or join. Player numbers
+   are assigned automatically. The host is player 1; guests are players 2–4.
+4. Check that all pages show the same count (2/4, 3/4 or 4/4) and roster.
+   This confirms the browser connection, not in-game multiplayer.
+5. Use Quetzal's multiplayer menu to join each other as in the successful local
+   two-player test. Confirm all trainers find each other and move independently.
+6. Play for 15–30 minutes. Change maps and try available shared interactions.
+   Record results for two players and then three/four if enough testers are available.
+7. Save every trainer in-game, wait for Saved locally, and export backups.
+   Leave the room, refresh, continue each trainer and create/join a room again.
+8. Test a guest leaving and rejoining. The room stays open and the count updates;
+   remaining players are prompted to rejoin multiplayer inside Quetzal because
+   serial sessions reset. This is not seamless live-game reconnect. The host
+   leaving closes the room for everyone; no automatic host migration exists.
 
-Report whether joining, movement and save/rejoin worked. If either game freezes
-or disconnects, copy both Emulator diagnostics outputs and the game's screen
-text. Hosted device-level handshakes have passed; this is the remaining gameplay
-test. Longer milestone acceptance calls for repeated 60-minute sessions.
+Prefer separate physical devices/networks for the internet test. Keep games
+visible; sleeping or background suspension may interrupt multiplayer. A missing
+room should give a clear error, and a fifth player should see Room is full.
+Play solo simply by skipping room creation/joining.
 
-## Controls and initial configuration
+The agent has verified four real WASM serial controllers discovering all peers
+through the relay, with injected RTT through 250 ms, plus browser room controls.
+This does not prove four-player Quetzal gameplay, battles, trades or long sessions.
+Longer milestone acceptance calls for repeated 60-minute sessions.
 
-Click the game canvas to focus it. Arrows move; X is the GBA A button, Z is B,
-Enter is Start, Right Shift is Select, A is L, S is R. Use Keyboard settings
-to change any binding. Select a binding and press a key; Escape cancels capture.
-Occupied keys swap assignments. Changes persist in this browser; Restore
-defaults resets them. Keyboard input only controls the game while its canvas
-has focus. Opening settings releases held keys but does not pause the game.
+## Solo save verification
 
-Keyboard settings also has Export keybinds and Import keybinds for versioned
-JSON files. Imports validate all ten unique assignments before changing anything.
-Fullscreen is next to the sound button; exit with Escape or Exit fullscreen.
+1. Continue or create a trainer and reach a point where Quetzal permits saving.
+2. Save using the game's own menu. Wait for Saved locally, then export.
+3. Refresh, select the same slot and press Play / Continue. Choose Continue in-game.
+4. Confirm trainer name, location and party match the last completed in-game save.
 
-User result (2026-09-08): the in-game save -> refresh test appeared to work.
-The user subsequently confirmed local in-game multiplayer works after switching
-to Pokémon Gen3 link-cable mode. Longer sessions, shared interactions and
-multiplayer save/reload/rejoin remain to be tested.
+The save-completion detector still uses a memory-stability heuristic. Closing a
+tab does not preserve the exact instant of play. The user already confirmed an
+initial save/refresh pass and local two-player gameplay on 2026-09-08; do not ask
+an agent to repeat manual trainer progression unless specifically wanted.
 
-Next manual check: play together for 15–30 minutes, change maps, try an available
-shared interaction, save both trainers and export each save. Refresh both windows,
-continue each trainer, reconnect and confirm multiplayer works again. Report any
-disconnect, missing progress or game freeze. This can run alongside relay work.
+## Controls
 
-After the 2026-09-08 link-mode fix, refresh BOTH windows before testing. The old
-build used the wrong serial mode and cannot connect to the new build's channel.
-Diagnostics should now show `serialMode: "Pokémon Gen3 link cable"`.
+Click the game to focus it. Arrows move; X is GBA A, Z is B, Enter is Start,
+Right Shift is Select, A is L and S is R. Keyboard settings changes bindings,
+swaps conflicts and supports keybind import/export. Changes persist locally.
+Keyboard settings is at the top right. Fullscreen is next to the Volume button;
+it shows only the game, preserving its aspect ratio. Escape exits. Dialogs do
+not pause the game.
 
-For comparable test trainers, leave randomization and Nuzlocke disabled and use
-normal difficulty. In new-game configuration, S advances to the next settings
-page. On the final Miscellaneous page, Up from the first row wraps to Save;
-press X to continue. Give the trainers distinct names and appearances.
+Volume opens a slider with a mute button. The level persists in this browser.
+End session appears beside Play while running. Save in Quetzal, wait for Saved
+locally, then confirm End session. It closes the emulator and leaves the room;
+ending the host's session closes the room for everyone. You can then switch
+slots or press Play again. This does not create an in-game save for you.
+Reloading or navigating away while running shows the browser's generic warning;
+browsers do not allow a custom save reminder in that native prompt. No warning
+appears while idle. The Room question mark explains the connection sequence on
+hover or focus. Create/Join are disabled until the game is ready.
 
-## Test 1: solo gameplay and durable progress
+For the manual save check, also try End session followed by Play / Continue and
+confirm the last completed in-game save loads. Automated lifecycle tests use
+isolated browser profiles and do not progress personal trainers:
+`PLAYWRIGHT_MODULE=<installed playwright index.mjs> node tests/ui/session-controls.mjs`.
 
-1. Finish trainer creation and reach a point where Quetzal allows saving.
-2. Confirm walking, menus and, when available, a battle work.
-3. Use the game's own Save menu. Wait for the page's Local backup updated message
-   (normally a few seconds after the save memory stops changing).
-4. Click Export game save to retain a separate .srm backup.
-5. Refresh. In fixture mode the game reloads automatically; otherwise press
-   Play / Continue. Select Continue in the game and check name, location and party.
-6. Later, close and reopen the browser and repeat the check.
+## Local development
 
-Expected: return to the last completed in-game save, not the exact instant the
-tab was closed. Storage is specific to the browser profile and origin. Chrome
-and the Codex in-app browser do not share saves. Export/import to move between them.
+`npm start` serves the original save origin at http://127.0.0.1:4173.
+`npm run prepare:site` followed by `npm run relay:dev` serves the package and
+Cloudflare relay locally at http://127.0.0.1:8787. Both bind to loopback.
+Port 4173 defaults to the port-8787 relay. Both sites load game content automatically.
 
-## Test 2: two local browser instances
-
-1. Open the A and B links in two windows in the same browser profile, using the
-   exact same hostname (127.0.0.1). Keep both windows visible. Do not use incognito.
-2. Create two trainers or import a separate cartridge save for each slot before
-   loading the ROM. Never run the same trainer slot in two windows.
-3. Choose This browser only in Connection and enter the same room code in both windows.
-4. Click Host (player A) in A and Join (player B) in B.
-   A first shows Hosting / waiting for Player B; B first shows Searching for host.
-   Cancel connection works while waiting. Room controls return when disconnected.
-5. Both pages should say Transport connected. This alone is NOT a multiplayer pass.
-6. Open Quetzal's own multiplayer menu in each game and follow its host/join flow.
-   Record the menu steps; the exact game prerequisites are still under test.
-7. Check whether the trainers find and see each other. Move each independently.
-   Try supported shared interactions. Inspect the sent/received counters below
-   the connection controls: they should show actual game packet traffic.
-8. Save each trainer in-game, export backups, disconnect, refresh and rejoin.
-
-If discovery fails, keep both windows open and report the in-game screen text,
-whether the transport is connected, and the sent/received counters. A 5-second
-peer timeout is currently used; background suspension may disconnect a session.
-Include `serialMode`, `siocnt`, and whether frames keep advancing if the game
-gets stuck. User's original failure: host frames/averageMs kept updating while
-sent/received were zero. A successful browser transport alone proves no gameplay.
+For a test without the relay, all windows use the same browser profile/origin,
+different save slots, and Connection settings → This browser only. Create/join
+rooms in the same way; BroadcastChannel supplies the local four-player transport.
+Loopback URLs and This browser only cannot connect separate computers.
 
 ## What to report
 
-For the WebSocket test, use the steps in `services/relay/README.md`: run the relay,
-select WebSocket relay, share A's generated room code, and connect through the
-game's multiplayer menu. Start with delay/jitter zero, then try receive delay 25
-and 50 ms on BOTH players. Report gameplay and save/rejoin results, plus peerRttMs
-and packet counts if anything fails. Leave test delays at zero for normal play.
+- Player count, browser/device and last successful step.
+- Whether all trainers can see/move independently and save/rejoin correctly.
+- Any exact in-game error text or freeze/disconnect behavior.
+- Each affected player's Emulator diagnostics, especially frames, sent/received,
+  peerRttMs, serialMode and siocnt. Frames advancing with zero game packets is
+  different from the emulator itself stopping.
 
-Port 4173, port 8787 and the hosted domain have separate browser storage.
-Export each existing trainer before changing origin; import before pressing Play.
-Localhost URLs cannot reach another computer. Use the hosted URL for internet tests.
-
-- Browser and which test you ran.
-- Last successful step and any exact error text.
-- Whether refresh restored the correct trainer progress.
-- For multiplayer: transport status, each game's screen, and packet counts.
-- Audio glitches, slowdown, freeze, or unexpected control behavior.
-
-A short report is enough, for example: “Solo save/refresh works; transport
-connects, but B cannot find A in the game's menu; packets A 120/0, B 0/120.”
+A short report is enough. No screenshots or long playthrough descriptions are required.

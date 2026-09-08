@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {BUILD_ID,ROM_SHA256,ROM_SIZE} from '../apps/harness/relay-protocol.mjs';
 const out=resolve('dist/site');mkdirSync(out,{recursive:true});
-for(const name of ['index.html','style.css','main.mjs','controls.mjs','saves.mjs','emulator-worker.mjs','local-link.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
+for(const name of ['index.html','style.css','main.mjs','controls.mjs','volume.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
 mkdirSync(resolve(out,'core'),{recursive:true});
 const build=JSON.parse(readFileSync('apps/harness/core/build.json','utf8'));
 if(build.serial!=='mul_poke'||build.commit!=='8d268a6bb2cd799f8f2791ebb544a7ef550cfc6f')throw Error('Rebuild the pinned link-cable core first.');

@@ -13,7 +13,10 @@ Quetzal content and acknowledged distribution concerns. Do not reintroduce
 bring-your-own-ROM onboarding as a requirement. The existing picker and loopback
 fixture were prototype tools. Automatic loading is now implemented for the
 packaged website and local development. The playtest is deployed at
-https://quetzal-playtest.rikcroy.workers.dev (2026-09-08).
+https://quetzal.rikcroy.workers.dev (2026-09-08). The user requested the Worker
+name `quetzal`; it is now the configured deployment target. The old
+`quetzal-playtest` Worker is retained for save export, not redirected or deleted.
+The new origin has separate browser saves and a separate room namespace.
 
 Read `docs/IMPLEMENTATION_PLAN.md` before implementing. It contains the research,
 architecture, milestone acceptance criteria, and unresolved decisions.
@@ -45,10 +48,12 @@ The user subsequently confirmed the in-game retest works. Native baseline
 scripts now use the same corrected mode.
 The old RFU-first research assumption must not be treated as established fact.
 
-Initial assumptions, pending user preferences: desktop Chrome/Edge, two players,
-independent trainer saves usable solo, private friend lobbies. Treat these as
-defaults, not confirmed requirements. Full mobile support and four-player play
-are later compatibility targets.
+Confirmed scope update (2026-09-08): up to four players per room, one default
+browser-local save slot, and user-created/renamed/deleted additional slots.
+No room code exists until Create room; joining automatically assigns a guest ID.
+Save slot names and IDs are independent of room/player identities. Existing A/B
+saves migrate without changing their keys or bytes. Desktop Chrome/Edge remains
+the working default; full mobile gameplay support is a later compatibility target.
 
 ## Execution priorities
 
@@ -100,5 +105,35 @@ Next: user-led gameplay on two devices, preferably separate networks. Hosted
 device handshakes do not establish sustained internet gameplay compatibility.
 Do not call the local BroadcastChannel connection internet multiplayer. Current
 save persistence uses a stability heuristic; game-aware completion detection
-and same-slot multi-writer protection still need work. Accounts, friends,
+still needs work. Web Locks now prevent opening, importing into, or deleting an
+active save slot from another current-build tab. Accounts, friends,
 avatars, and spectator mode are not prerequisites for this deliverable.
+
+Four-player implementation: protocol/build v2 assigns host ID 0 and guest IDs
+1–3, supplies rosters, and routes broadcasts to every other player. Guest departure
+keeps the room but resets remaining native serial sessions; players must rejoin
+inside Quetzal. Host departure closes the room. No host migration or transparent
+live-game reconnect is promised. Native session restart clears protocol and pending
+IRQ state. Twenty-three local tests and an isolated browser UI scenario passed;
+real four-core handshakes pass through the local relay at added RTT through 250 ms.
+The v2 update was deployed as `fbb2feac-c1fe-4b23-8fd1-941b389238bc` on the
+old name. The renamed deployment is `fc1bbdec-11b7-4919-993e-b50f512fb68d`.
+All ten hosted relay tests and the isolated public-site browser UI scenario passed.
+User-led four-player gameplay remains unverified. See experiment 005.
+
+UI preference (2026-09-08): minimal emulator interface. No top brand banner,
+marketing headings, decorative pills, gradients, or repeated helper paragraphs.
+Keyboard settings belongs at the top right. Use restrained charcoal/gray with
+blue actions, compact save/room controls, and source/license links only in the
+footer. Fullscreen must show only the aspect-correct game image, with Escape to
+exit; no app header, status, controls or padding in fullscreen. Keep actionable
+errors and save-deletion warnings. See experiment 006 for UI verification.
+
+Session controls (2026-09-08): Volume uses a persisted gain slider and mute.
+End session confirms the save reminder, shuts down the worker/room/audio, drains
+already-posted save writes, releases the slot lock and returns to Play. A new
+session creates a fresh worker. It does not manufacture an in-game save. Only
+active sessions register beforeunload; browsers display their own generic text.
+Room controls derive disabled state from current readiness/connection state and
+resynchronize on pageshow. The Room tooltip contains the multiplayer sequence.
+See experiment 007 for automated lifecycle evidence.

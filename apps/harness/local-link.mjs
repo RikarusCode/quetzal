@@ -1,72 +1,78 @@
-// The emulator owns core callbacks; this transport only queues inbound packets.
+import {BroadcastRoomChannel} from './broadcast-room.mjs';
+
+// All native callbacks execute on the emulator owner, never on the relay.
 export class LocalLink {
-  constructor({core,onState,channelFactory=name=>new BroadcastChannel(name),now=()=>performance.now()}){
-    Object.assign(this,{core,onState,channelFactory,now});this.state='idle';this.queue=[];this.sent=0;this.received=0;
+  constructor({core,onState,channelFactory=(_name,peer)=>new BroadcastRoomChannel(peer),now=()=>performance.now()}){
+    Object.assign(this,{core,onState,channelFactory,now});this.state='idle';this.queue=[];this.members=[];this.sent=0;this.received=0;
   }
   get connected(){return this.state==='connected';}
-  status(state,reason){this.state=state;this.onState({state,connected:this.connected,reason});}
-  send(type,data={}){this.channel?.postMessage({type,from:this.id,epoch:this.epoch,toEpoch:this.remote,...data});}
-  close(){
-    clearInterval(this.timer);this.channel?.close();this.channel=null;
-    this.core._host_link_stop();this.queue=[];this.state='idle';
+  status(state,reason){this.state=state;this.onState({state,connected:this.connected,reason,id:this.id,members:this.members.map(({id})=>({id})),room:this.room});}
+  send(type,to,data={}){const peer=this.members.find(p=>p.id===to);this.channel?.postMessage({type,from:this.id,epoch:this.epoch,to,toEpoch:peer?.epoch,...data});}
+  close(){clearInterval(this.timer);this.channel?.close();this.channel=null;this.core._host_link_stop();this.queue=[];this.members=[];this.state='idle';}
+  stop(reason='Left room.'){
+    this.channel?.postMessage({type:'stop'});this.close();this.status('idle',reason);
   }
-  stop(reason='Disconnected. You can host or join another room.'){
-    this.send('stop');this.close();this.status('idle',reason);
-  }
-  start(room,id){
+  start(room,intent){
     if(this.state!=='idle')return;
-    if(!/^[a-zA-Z0-9_-]{1,32}$/.test(room)||![0,1].includes(id))throw Error('Invalid room or player.');
-    this.id=id;this.epoch=crypto.randomUUID();this.remote='';this.sent=0;this.received=0;this.rttMs=null;
+    intent=intent===0?'create':typeof intent==='number'?'join':intent;
+    if(!/^[a-f0-9]{32}$/.test(room)||!['create','join'].includes(intent))throw Error('Invalid room or action.');
+    this.room=room;this.id=null;this.epoch=crypto.randomUUID();this.sent=0;this.received=0;this.rttMs=null;this.lastPeer=new Map();
     try{
-      this.channel=this.channelFactory(`quetzal-mul-poke-8d268a6-v2-${room}`,{room,id,epoch:this.epoch});
+      this.channel=this.channelFactory(`quetzal-v2-${room}`,{room,intent,epoch:this.epoch});
       this.channel.onmessage=({data:m})=>{try{this.message(m);}catch(error){this.stop('Connection error: '+error.message);}};
-      this.channel.onerror=error=>this.stop(error.message);
-      const begin=()=>{
+      this.channel.onerror=error=>{this.close();this.status('idle',error.message);};
+      this.channel.onready=()=>{
         try{
-          if(id===0&&!this.core._host_link_start(0))throw Error('The emulator could not start link hosting.');
-          this.status(id===0?'hosting':'searching',id===0?'Hosting · waiting for Player B…':'Joined room · waiting for the host…');
-          this.pulse();this.timer=setInterval(()=>this.pulse(),250);
+          this.id=this.channel.id;
+          if(!this.core._host_link_start(this.id))throw Error('The emulator could not start multiplayer.');
+          this.timer=setInterval(()=>this.pulse(),250);
         }catch(error){this.stop(error.message);}
       };
-      if(this.channel.ready===false){this.status('connecting','Connecting to relay…');this.channel.onready=begin;}else begin();
+      this.status('connecting',intent==='create'?'Creating your room…':'Joining room…');
     }catch(error){this.close();this.status('idle','Connection failed: '+error.message);}
   }
+  roster(members){
+    if(!Array.isArray(members)||members.length>4||!members.some(p=>p.id===this.id&&p.epoch===this.epoch))throw Error('Invalid room membership.');
+    if(members.length===this.members.length&&members.every(p=>this.members.some(old=>p.id===old.id&&p.epoch===old.epoch)))return;
+    const departed=this.members.some(old=>!members.some(p=>p.id===old.id&&p.epoch===old.epoch));
+    if(departed){
+      // Keep the room, but reset serial state before a freed player ID is reused.
+      // Players must rejoin through Quetzal after membership is reduced.
+      this.core._host_link_stop();this.queue=[];
+      if(!this.core._host_link_start(this.id))throw Error('Could not restart multiplayer after a player left.');
+    }
+    if(this.id===0)for(const p of members){
+      if(p.id!==0&&(departed||!this.members.some(old=>old.id===p.id&&old.epoch===p.epoch)))
+        if(!this.core._host_connected(p.id))throw Error('The emulator rejected another player.');
+    }
+    this.members=members.map(p=>({...p}));
+    for(const p of members)if(!this.lastPeer.has(p.epoch))this.lastPeer.set(p.epoch,this.now());
+    for(const epoch of this.lastPeer.keys())if(!members.some(p=>p.epoch===epoch))this.lastPeer.delete(epoch);
+    this.status(members.length>1?'connected':'hosting',departed?'A player left. Rejoin Multiplayer in Quetzal.':members.length>1?'Connected. Open Multiplayer in Quetzal.':'Waiting for players.');
+  }
   pulse(){
-    if(this.connected){
-      if(this.now()-this.lastPeer>5000){this.stop('Peer stopped responding. Reconnect here, then rejoin in the game.');return;}
-      this.send('heartbeat',{at:this.now()});
-    }else if(this.state==='searching')this.send('hello');
+    for(const p of this.members){
+      if(p.id===this.id)continue;
+      if(this.now()-this.lastPeer.get(p.epoch)>10000){this.stop('A player stopped responding. Reconnect, then rejoin in Quetzal.');return;}
+      this.send('heartbeat',p.id,{at:this.now()});
+    }
   }
   message(m){
-    if(!m||m.from===this.id||![0,1].includes(m.from)||typeof m.epoch!=='string')return;
-    if(m.type==='hello'&&this.id===0){
-      if(this.connected&&this.remote!==m.epoch)return;
-      if(!this.connected){
-        if(!this.core._host_connected(1)){this.stop('The emulator rejected the joining player. Start a new room.');return;}
-        this.remote=m.epoch;this.status('connected');
-      }
-      this.lastPeer=this.now();this.send('ready');return;
-    }
-    if(m.type==='ready'&&this.id===1&&m.toEpoch===this.epoch){
-      if(this.connected&&this.remote!==m.epoch)return;
-      if(!this.connected){
-        if(!this.core._host_link_start(1))throw Error('The emulator could not start wireless joining.');
-        this.remote=m.epoch;this.status('connected');
-      }
-      this.lastPeer=this.now();return;
-    }
-    if(!this.connected||m.epoch!==this.remote||m.toEpoch!==this.epoch)return;
-    this.lastPeer=this.now();
-    if(m.type==='heartbeat'){this.send('echo',{at:m.at});return;}
+    if(m?.type==='roster'){this.roster(m.members);return;}
+    const peer=this.members.find(p=>p.id===m?.from);
+    if(!peer||m.from===this.id||m.epoch!==peer.epoch||m.toEpoch!==this.epoch)return;
+    this.lastPeer.set(peer.epoch,this.now());
+    if(m.type==='heartbeat'){this.send('echo',m.from,{at:m.at});return;}
     if(m.type==='echo'){if(Number.isFinite(m.at))this.rttMs=Math.round(this.now()-m.at);return;}
-    if(m.type==='stop'){this.close();this.status('idle','Peer left. Reconnect here, then rejoin in the game.');return;}
     if(m.type==='packet'){
-      if(!(m.bytes instanceof Uint8Array)||m.bytes.length>65536||this.queue.length>=512){this.stop('Invalid packet or packet queue overflow. Start a new room.');return;}
+      if(!(m.bytes instanceof Uint8Array)||m.bytes.length!==24||this.queue.length>=512)throw Error('Invalid packet or incoming queue overflow.');
       this.queue.push(m);
     }
   }
   packet(flags,bytes,to){
-    if(this.connected&&bytes.length&&(to===65535||to===(this.id===0?1:0))){this.send('packet',{bytes,flags});this.sent++;}
+    if(this.connected&&bytes.length&&(to===65535||this.members.some(p=>p.id===to&&p.id!==this.id))){
+      this.channel.postMessage({type:'packet',from:this.id,epoch:this.epoch,to,flags,bytes});this.sent++;
+    }
   }
   drain(){
     for(const p of this.queue.splice(0)){

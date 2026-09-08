@@ -40,8 +40,8 @@ export function setupControls({screen,send,isLoaded}){
     }));
   }
   function persist(message){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(bindings));$('binding-status').textContent=message;}catch{$('binding-status').textContent='Bindings updated for this tab. Browser storage is unavailable, so changes will not survive refresh.';}}
-  function open(){release();capture=null;render();$('binding-status').textContent='Changes save automatically in this browser. The game keeps running while settings are open.';dialog.showModal();}
-  for(const id of ['settings','edit-controls'])$(id).onclick=open;
+  function open(){release();capture=null;render();$('binding-status').textContent='Saved automatically.';dialog.showModal();}
+  $('settings').onclick=open;
   for(const id of ['close-settings','done-settings'])$(id).onclick=()=>dialog.close();
   dialog.addEventListener('close',()=>{capture=null;release();render();if(isLoaded())screen.focus();});
   dialog.addEventListener('cancel',e=>{if(capture){e.preventDefault();capture=null;render();$('binding-status').textContent='Binding change canceled.';}});

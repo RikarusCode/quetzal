@@ -2,12 +2,12 @@ import {BUILD_ID,MAX_SOCKET_BUFFER,decodePacket,encodePacket,relaySocketURL} fro
 
 // BroadcastChannel-shaped adapter; core callbacks stay on the emulator owner.
 export class WebSocketChannel {
-  constructor({endpoint,room,id,epoch,delayMs=0,jitterMs=0,socketFactory=url=>new WebSocket(url)}){
-    Object.assign(this,{id,epoch,ready:false,remote:'',closed:false,pending:[],lastDue:0,lastSequence:0,ackSequence:0,relayRttMs:null});
+  constructor({endpoint,room,intent,epoch,delayMs=0,jitterMs=0,socketFactory=url=>new WebSocket(url)}){
+    Object.assign(this,{id:null,epoch,ready:false,members:[],closed:false,pending:[],lastDue:0,lastSequence:0,ackSequence:0,relayRttMs:null});
     this.delayMs=Math.max(0,Math.min(250,Number(delayMs)||0));this.jitterMs=Math.max(0,Math.min(100,Number(jitterMs)||0));
     this.socket=socketFactory(relaySocketURL(endpoint,room));this.socket.binaryType='arraybuffer';this.lastResponse=performance.now();
     this.timeout=setTimeout(()=>this.fail('Relay connection timed out. Check the relay address.'),10000);
-    this.socket.onopen=()=>this.sendJSON({type:'join',id,epoch,build:BUILD_ID});
+    this.socket.onopen=()=>this.sendJSON({type:'join',intent,epoch,build:BUILD_ID});
     this.socket.onmessage=({data})=>{try{this.receive(data);}catch(error){this.fail(error.message);}};
     this.socket.onerror=()=>this.fail('Cannot reach the relay. Check its address and that it is running.');
     this.socket.onclose=()=>{if(!this.closed)this.fail('Relay connection closed. Reconnect here, then rejoin in the game.');};
@@ -20,21 +20,24 @@ export class WebSocketChannel {
   }
   postMessage(m){
     if(!this.ready||this.closed)return;
-    if(m.type==='packet')this.send(encodePacket(m.flags,m.bytes));else this.sendJSON(m);
+    if(m.type==='packet')this.send(encodePacket(m.flags,m.bytes,m.to));else this.sendJSON(m);
   }
   receive(data){
+    if(this.closed)return;
     if(data instanceof ArrayBuffer){
       const packet=decodePacket(data);
-      if(!this.ready||!this.remote||packet.from===this.id||packet.sequence!==this.lastSequence+1)throw Error('Relay packet sequence or sender mismatch.');
+      const peer=this.members.find(p=>p.id===packet.from);
+      if(!this.ready||!peer||packet.from===this.id||!(packet.to===65535||packet.to===this.id)||packet.sequence!==this.lastSequence+1)throw Error('Relay packet sequence or sender mismatch.');
       this.lastSequence=packet.sequence;
-      this.enqueue({type:'packet',from:packet.from,epoch:this.remote,toEpoch:this.epoch,flags:packet.flags,bytes:packet.bytes},packet.sequence);return;
+      this.enqueue({type:'packet',from:packet.from,epoch:peer.epoch,toEpoch:this.epoch,flags:packet.flags,bytes:packet.bytes},packet.sequence);return;
     }
     if(typeof data!=='string'||data.length>2048)throw Error('Invalid relay control message.');
     const m=JSON.parse(data);
     if(m.type==='error'){this.fail(m.message);return;}
     if(m.type==='joined'){
-      if(this.ready||m.id!==this.id||m.build!==BUILD_ID)throw Error('Relay compatibility mismatch.');
-      clearTimeout(this.timeout);this.ready=true;this.onready?.();
+      if(this.ready||![0,1,2,3].includes(m.id)||m.build!==BUILD_ID)throw Error('Relay compatibility mismatch.');
+      this.id=m.id;clearTimeout(this.timeout);this.ready=true;this.onready?.();
+      if(this.closed)return;
       this.pingTimer=setInterval(()=>{
         if(performance.now()-this.lastResponse>15000){this.fail('Relay stopped responding. Reconnect to retry.');return;}
         this.sendJSON({type:'ping',at:performance.now()});
@@ -44,9 +47,11 @@ export class WebSocketChannel {
       if(!Number.isFinite(m.at))throw Error('Invalid relay ping response.');
       this.lastResponse=performance.now();this.relayRttMs=Math.round(this.lastResponse-m.at);return;
     }
-    if(m.type==='peer-left'){this.fail('Peer left. Reconnect here, then rejoin in the game.');return;}
-    if(!this.ready||m.from===this.id||![0,1].includes(m.from)||typeof m.epoch!=='string')throw Error('Invalid relay sender.');
-    if(m.type==='hello'||m.type==='ready')this.remote=m.epoch;
+    if(m.type==='roster'){
+      if(!this.ready||!Array.isArray(m.members)||m.members.length<1||m.members.length>4||new Set(m.members.map(p=>p.id)).size!==m.members.length||m.members.some(p=>![0,1,2,3].includes(p.id)||typeof p.epoch!=='string'))throw Error('Invalid room membership.');
+      this.members=m.members;this.enqueue(m);return;
+    }
+    if(!this.ready||m.from===this.id||!this.members.some(p=>p.id===m.from&&p.epoch===m.epoch)||m.toEpoch!==this.epoch)throw Error('Invalid relay sender.');
     this.enqueue(m);
   }
   enqueue(message,sequence=0){

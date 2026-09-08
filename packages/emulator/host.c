@@ -88,7 +88,12 @@ EMSCRIPTEN_KEEPALIVE int host_serial_mode(void) { return serial_mode; }
 EMSCRIPTEN_KEEPALIVE void *host_io_registers(void) { return io_registers; }
 EMSCRIPTEN_KEEPALIVE int host_has_network(void) { return network.start && network.receive; }
 EMSCRIPTEN_KEEPALIVE int host_link_start(unsigned id) {
-  if (!loaded || linked || !network.start) return 0;
+  if (!loaded || linked || !network.start || id > 3) return 0;
+  // Rejoining must not reuse packets or handshake state from a previous group.
+  extern void serialproto_reset(void);
+  extern void serial_set_irq_cycles(uint32_t cycles);
+  serialproto_reset();
+  serial_set_irq_cycles(0);
   network.start(id,send_packet,poll_receive); linked=true; return 1;
 }
 EMSCRIPTEN_KEEPALIVE int host_connected(unsigned id) {
@@ -98,5 +103,5 @@ EMSCRIPTEN_KEEPALIVE void host_link_stop(void) {
   if (linked && network.stop) network.stop(); linked=false;
 }
 EMSCRIPTEN_KEEPALIVE void host_receive(const void *data,unsigned len,unsigned peer) {
-  if (linked && len <= 65536 && network.receive) network.receive(data,len,peer);
+  if (linked && peer < 4 && len <= 65536 && network.receive) network.receive(data,len,peer);
 }
