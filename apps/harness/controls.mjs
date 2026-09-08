@@ -1,5 +1,5 @@
 export const ACTIONS=[['up','Up',4],['down','Down',5],['left','Left',6],['right','Right',7],['a','A · Confirm',8],['b','B · Cancel',0],['start','Start',3],['select','Select',2],['l','L shoulder',10],['r','R shoulder',11]];
-export const DEFAULT_BINDINGS={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',a:'KeyX',b:'KeyZ',start:'Enter',select:'ShiftRight',l:'KeyA',r:'KeyS'};
+export const DEFAULT_BINDINGS={up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',a:'KeyE',b:'KeyQ',start:'Enter',select:'ShiftRight',l:'ArrowLeft',r:'ArrowRight'};
 const STORAGE_KEY='quetzal.keyboard.v1';
 export function allowedKey(code){return /^(Key[A-Z]|Digit[0-9]|Arrow(Up|Down|Left|Right)|Space|Enter|Shift(Left|Right)|Backspace|Tab|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|Backquote|Numpad[0-9])$/.test(code);}
 export function validBindings(value){return !!value && typeof value==='object' && !Array.isArray(value) && Object.keys(value).length===ACTIONS.length && ACTIONS.every(([id])=>Object.hasOwn(value,id)&&typeof value[id]==='string'&&allowedKey(value[id])) && new Set(ACTIONS.map(([id])=>value[id])).size===ACTIONS.length;}

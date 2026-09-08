@@ -76,8 +76,8 @@ an agent to repeat manual trainer progression unless specifically wanted.
 
 ## Controls
 
-Click the game to focus it. Arrows move; X is GBA A, Z is B, Enter is Start,
-Right Shift is Select, A is L and S is R. Keyboard settings changes bindings,
+Click the game to focus it. WASD moves; E is GBA A, Q is B, Enter is Start,
+Right Shift is Select, Left Arrow is L and Right Arrow is R. Keyboard settings changes bindings,
 swaps conflicts and supports keybind import/export. Changes persist locally.
 Keyboard settings is at the top right. Fullscreen is next to the Volume button;
 it shows only the game, preserving its aspect ratio. Escape exits. Dialogs do
