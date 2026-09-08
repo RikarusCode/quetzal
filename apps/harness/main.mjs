@@ -4,12 +4,15 @@ import {setupControls} from './controls.mjs';
 import {setupVolume} from './volume.mjs';
 import {ROM_SHA256 as TARGET,newRoomCode,relaySocketURL} from './relay-protocol.mjs';
 import {downloadGame} from './game-content.mjs';
+import {createPresenter} from './video.mjs';
 const $=id=>document.getElementById(id);
 for(const id of ['host','show-join','join','sound'])$(id).disabled=true;
 const db=await openSaves().catch(error=>{$('status').textContent=error.message;$('play').disabled=true;throw error;});
 const ctx=$('screen').getContext('2d');let worker,key,loaded=false,loading=false,ending=false,networkAvailable=false,unlockSave,stopAck,saveChain=Promise.resolve(),linkState='idle',lastFrame=0,stalled=false,failed=false;
 setupControls({screen:$('screen'),send:message=>worker?.postMessage(message),isLoaded:()=>loaded&&!ending});
-const audio=setupVolume({isPlaying:()=>loaded&&!ending,onError:error=>{$('status').textContent='Audio unavailable: '+error.message;}});
+let audioStats=null;
+const presenter=createPresenter(rgba=>ctx.putImageData(new ImageData(rgba,240,160),0,0));
+const audio=setupVolume({isPlaying:()=>loaded&&!ending,send:(message,transfer=[])=>worker?.postMessage(message,transfer),onStats:stats=>{audioStats=stats;},onError:error=>{$('status').textContent='Audio unavailable: '+error.message;}});
 function beforeUnload(event){if(loaded){event.preventDefault();event.returnValue='Save your game in Quetzal before leaving.';}}
 function syncSessionControls(){
   const busy=loaded||loading||ending,canConnect=loaded&&networkAvailable&&!failed&&!ending&&linkState==='idle';
@@ -68,7 +71,7 @@ instance.onmessage=({data:m})=>{
   if(m.type==='stopped'){stopAck?.();return;}
   if(m.type==='frame'){
     lastFrame=performance.now();if(stalled){stalled=false;$('status').textContent='Running';}
-    ctx.putImageData(new ImageData(m.rgba,240,160),0,0);audio.play(m.audio);
+    presenter.submit(m.rgba,buffer=>{if(instance===worker)instance.postMessage({type:'video-buffer',buffer},[buffer]);});
   }
   if(m.type==='ready'){
     loaded=true;loading=false;failed=false;networkAvailable=!!m.network;lastFrame=performance.now();$('export').disabled=false;
@@ -86,7 +89,7 @@ instance.onmessage=({data:m})=>{
     downloadSave(m.bytes);
   }
   if(m.type==='link')showLink(m.state,m.reason,m);
-  if(m.type==='stats'){$('stats').textContent=JSON.stringify(m,null,2);window.harnessStats=m;}
+  if(m.type==='stats'){const stats={...m,video:presenter.stats(),audio:audioStats};$('stats').textContent=JSON.stringify(stats,null,2);window.harnessStats=stats;}
   if(m.type==='log')$('log').textContent=($('log').textContent+'\n'+m.text).slice(-10000);
   if(m.type==='error'){if(loaded)showError(m.message);else failStart(m.message);}
 };
@@ -103,12 +106,11 @@ setInterval(()=>{
   }
 },1000);
 async function loadRom(rom){
-    $('status').textContent='Checking ROM…';
-    if(await hash(rom)!==TARGET)throw Error('This harness requires the supplied Quetzal Alpha 8v4 patched ROM.');
+    // ROM integrity was checked in the loader worker before it entered the cache.
     const record=await readSave(db,key);
     if(record && await hash(record.bytes)!==record.digest)throw Error('Local save checksum mismatch. Import a known good backup.');
     $('play').disabled=true;$('slot').disabled=true;$('import').disabled=true;
-    startWorker().postMessage({type:'load',rom,save:record?.bytes},[rom]);
+    worker.postMessage({type:'load',rom,save:record?.bytes},[rom]);
     $('status').textContent=record?'Loading saved trainer…':'Starting a new trainer…';
 }
 $('play').onclick=async()=>{
@@ -116,6 +118,7 @@ $('play').onclick=async()=>{
   loading=true;failed=false;networkAvailable=false;syncSessionControls();showLink('idle','Starting game…');
   try{
     const slot=slots.current();unlockSave=await lockSlot(TARGET,slot.id);key=slotKey(TARGET,slot.id);
+    presenter.clear();startWorker();
     await loadRom(await downloadGame(message=>{$('status').textContent=message;}));
   }
   catch(error){failStart(error.message);}
@@ -138,6 +141,7 @@ $('confirm-end').onclick=async()=>{
     await saveChain;
   }catch(error){$('save-status').textContent='Session cleanup: '+error.message;}
   finally{
+    presenter.clear();
     worker=null;previous?.terminate();stopAck=null;
     try{await audio.stop();}catch(error){$('status').textContent=error.message;}
     loaded=false;loading=false;failed=false;networkAvailable=false;stalled=false;lastFrame=0;

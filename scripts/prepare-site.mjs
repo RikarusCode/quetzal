@@ -8,7 +8,7 @@ import {fetchDeployAssets} from './deploy-assets.mjs';
 const out=resolve('dist/site');mkdirSync(out,{recursive:true});
 const remote=process.argv.includes('--remote');
 if(remote)await fetchDeployAssets(out);
-for(const name of ['index.html','style.css','main.mjs','controls.mjs','volume.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
+for(const name of ['index.html','style.css','main.mjs','controls.mjs','volume.mjs','audio-buffer.mjs','audio-worklet.mjs','video.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs','game-content-worker.mjs','game-loader.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
 mkdirSync(resolve(out,'core'),{recursive:true});
 const build=JSON.parse(readFileSync(remote?resolve(out,'core/build.json'):'apps/harness/core/build.json','utf8'));
 if(build.serial!=='mul_poke'||build.commit!=='8d268a6bb2cd799f8f2791ebb544a7ef550cfc6f')throw Error('Rebuild the pinned link-cable core first.');
@@ -21,7 +21,9 @@ if(compressed.length>25*1024*1024)throw Error('Compressed game exceeds the stati
 mkdirSync(resolve(out,'game'),{recursive:true});
 writeFileSync(resolve(out,asset),compressed);
 writeFileSync(resolve(out,'game-manifest.json'),JSON.stringify({build:BUILD_ID,url:'/'+asset,encoding:'gzip',size:ROM_SIZE,sha256:ROM_SHA256},null,2)+'\n');
-writeFileSync(resolve(out,'_headers'),`/*\n  Cross-Origin-Opener-Policy: same-origin\n  Cross-Origin-Embedder-Policy: require-corp\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  Cache-Control: no-cache\n/game/*\n  Cache-Control: public, max-age=31536000, immutable\n  Content-Type: application/gzip\n`);
+// Matching header rules are combined. A wildcard no-cache would override the
+// immutable game policy; other assets already use Cloudflare's revalidation default.
+writeFileSync(resolve(out,'_headers'),`/*\n  Cross-Origin-Opener-Policy: same-origin\n  Cross-Origin-Embedder-Policy: require-corp\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n/game/*\n  Cache-Control: public, max-age=31536000, immutable\n  Content-Type: application/gzip\n`);
 // Supply the actual pinned upstream source and our frontend/build materials.
 mkdirSync(resolve(out,'source'),{recursive:true});mkdirSync('build',{recursive:true});
 if(!remote){

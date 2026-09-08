@@ -145,3 +145,15 @@ inputs from the separate `quetzal-assets` static Worker and verifies the committ
 checksum manifest. This Worker is for explicitly published build artifacts, not
 routine code deployment. Core/frontend C changes require a matching rebuilt
 artifact release; preserve previous version directories for rollback builds.
+
+Playback architecture (2026-09-08): a page-lifetime loader worker retains one
+verified ROM; each session still fetches and validates the release manifest.
+Decompression/hashing run there while a fresh emulator worker prepares WASM.
+Versioned game assets are immutable; do not add a wildcard no-cache header,
+because Cloudflare combines matching rules. The emulator recycles three RGBA
+buffers through a requestAnimationFrame presenter. Never pace emulator/link
+execution with display callbacks, which pause in background tabs. Audio uses a
+direct MessagePort to an AudioWorklet with a fixed stereo ring/resampler. Wait
+for the processor's readiness handshake before sending PCM: AudioContext can
+report running before the device actually starts consuming samples. No C core,
+game, link protocol, or save format change was needed. See experiment 009.

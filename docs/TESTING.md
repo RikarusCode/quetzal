@@ -98,6 +98,17 @@ confirm the last completed in-game save loads. Automated lifecycle tests use
 isolated browser profiles and do not progress personal trainers:
 `PLAYWRIGHT_MODULE=<installed playwright index.mjs> node tests/ui/session-controls.mjs`.
 
+Playback/cache regression and profiling:
+`PLAYWRIGHT_MODULE=<installed playwright index.mjs> node tests/ui/performance.mjs`.
+This uses a fresh persistent Edge profile under `.local/`, runs only boot/title
+screens, and writes `.local/performance-after.json`. Set `UI_TEST_URL` to test a
+deployed site. It checks restart and refresh cache reuse, continuous audio,
+bounded video delivery during a deliberate 250 ms UI stall, audio suspend/resume,
+and session shutdown. Run timing measurements separately from builds or other
+browser tests. Browser cache eviction or disabling the cache will invalidate the
+refresh assertion. Emulator diagnostics include audio queue/underrun/overrun
+counts and presented/replaced/skipped video frames.
+
 ## Local development
 
 `npm start` serves the original save origin at http://127.0.0.1:4173.

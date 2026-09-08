@@ -1,6 +1,6 @@
-export function setupVolume({isPlaying,onError}){
+export function setupVolume({isPlaying,onError,send,onStats=()=>{}}){
   const $=id=>document.getElementById(id),button=$('sound'),panel=$('volume-popover'),slider=$('volume');
-  let context,gain,nextAudio=0,value=50,lastAudible=50;
+  let context,gain,node,starting,value=50,lastAudible=50;
   try{const stored=localStorage.getItem('quetzal.volume');if(stored!==null&&Number.isFinite(Number(stored)))value=Math.max(0,Math.min(100,Number(stored)));}catch{}
   if(value)lastAudible=value;
   function render(){
@@ -14,8 +14,23 @@ export function setupVolume({isPlaying,onError}){
   }
   async function activate(){
     if(!isPlaying())return;
-    if(!context){context=new AudioContext();gain=context.createGain();gain.gain.value=value/100;gain.connect(context.destination);nextAudio=0;}
-    await context.resume();
+    if(!context){
+      const current=context=new AudioContext({latencyHint:'interactive'});
+      gain=current.createGain();gain.gain.value=value/100;gain.connect(current.destination);
+      current.onstatechange=()=>{if(context===current){node?.port.postMessage({type:'reset'});send({type:'audio-active',active:current.state==='running'});}};
+      const resumed=current.resume();
+      starting=(async()=>{
+        await Promise.all([resumed,current.audioWorklet.addModule(new URL('./audio-worklet.mjs',import.meta.url))]);
+        if(context!==current)return;
+        node=new AudioWorkletNode(current,'quetzal-audio',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
+        node.connect(gain);node.port.onmessage=({data})=>{if(context===current)onStats({...data,outputRate:current.sampleRate,baseLatencyMs:Math.round(current.baseLatency*1000)});};
+        node.onprocessorerror=()=>{if(context===current){send({type:'audio-active',active:false});onError(Error('Audio processor stopped. End the session and try again.'));}};
+        const channel=new MessageChannel();node.port.postMessage({type:'connect',port:channel.port1},[channel.port1]);
+        send({type:'audio-connect',port:channel.port2,active:current.state==='running'},[channel.port2]);
+      })().catch(async error=>{if(context!==current)return;await stop();throw error;});
+    }
+    await starting;
+    if(context?.state==='suspended')await context.resume();
   }
   const close=()=>{panel.hidden=true;button.setAttribute('aria-expanded','false');};
   button.onclick=()=>{
@@ -29,15 +44,10 @@ export function setupVolume({isPlaying,onError}){
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){close();button.focus();}});
   document.addEventListener('fullscreenchange',close);
   render();
-  return {
-    play(pcm){
-      if(!context||context.state!=='running'||!pcm.length||value===0)return;
-      if(nextAudio>context.currentTime+.25)return;
-      const buffer=context.createBuffer(2,pcm.length/2,32768);
-      for(let ch=0;ch<2;ch++){const data=buffer.getChannelData(ch);for(let i=0;i<data.length;i++)data[i]=pcm[i*2+ch]/32768;}
-      const source=context.createBufferSource();source.buffer=buffer;source.connect(gain);
-      nextAudio=Math.max(nextAudio,context.currentTime+.025);source.start(nextAudio);nextAudio+=buffer.duration;
-    },
-    async stop(){close();const previous=context;context=null;gain=null;nextAudio=0;if(previous&&previous.state!=='closed')await previous.close();}
-  };
+  async function stop(){
+    close();send({type:'audio-disconnect'});const previous=context;context=null;starting=null;
+    node?.disconnect();node?.port.close();node=null;gain=null;onStats(null);
+    if(previous&&previous.state!=='closed')await previous.close();
+  }
+  return {stop};
 }

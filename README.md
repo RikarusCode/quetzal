@@ -84,6 +84,12 @@ Each browser runs an independent gpSP instance in a Web Worker. A small C fronte
 connects the emulator to JavaScript for video, audio, input, save memory, and link
 packets. IndexedDB stores trainer saves and slot metadata on the device.
 
+A separate worker downloads, decompresses, and verifies game content while the
+emulator initializes. Versioned downloads use the browser cache, and restarting
+a session reuses the verified ROM already in memory. Video follows the display's
+refresh cycle; stereo audio streams directly from the emulator to an AudioWorklet
+with a bounded buffer, independently of interface rendering.
+
 Multiplayer uses gpSP's **Pokémon Gen3 link-cable mode (`mul_poke`)**. WebSockets
 carry emulator packets through a Cloudflare Worker, with a Durable Object
 coordinating each room. The server handles connections and packet delivery;

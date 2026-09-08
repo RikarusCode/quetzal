@@ -29,7 +29,7 @@ try{
   await host.evaluate(()=>{for(const id of ['host','show-join','join'])document.getElementById(id).disabled=false;dispatchEvent(new Event('pageshow'));});
   await idle(host);
   await host.locator('#room-help-button').hover();await host.locator('#room-help-text').waitFor({state:'visible'});
-  assert.match(await host.locator('#room-help-text').textContent(),/host enables Multiplayer first/);
+  assert.match(await host.locator('#room-help-text').textContent(),/host should then enable Multiplayer/);
   await host.locator('#room-help-button').focus();await host.keyboard.press('Escape');assert.equal(await host.locator('#room-help-text').isVisible(),false);
   await play(host);
   for(const id of ['host','show-join','join'])assert.equal(await host.locator('#'+id).isEnabled(),true);

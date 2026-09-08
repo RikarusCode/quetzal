@@ -68,7 +68,7 @@ export function setupControls({screen,send,isLoaded}){
       const action=capture;bindings=rebind(bindings,action,e.code);capture=null;render();persist(`${ACTIONS.find(([id])=>id===action)[1]} set to ${keyLabel(e.code)}. Saved.`);dialog.querySelector(`[data-action="${action}"]`).focus();return;
     }
     if(!isLoaded()||document.activeElement!==screen||e.ctrlKey||e.metaKey||e.altKey||!Object.values(bindings).includes(e.code))return;
-    e.preventDefault();held.add(e.code);send({type:'buttons',mask:maskFor(held,bindings)});
+    e.preventDefault();if(held.has(e.code))return;held.add(e.code);send({type:'buttons',mask:maskFor(held,bindings)});
   });
   window.addEventListener('keyup',e=>{if(held.delete(e.code)){e.preventDefault();send({type:'buttons',mask:maskFor(held,bindings)});}});
   screen.addEventListener('blur',release);window.addEventListener('blur',release);
