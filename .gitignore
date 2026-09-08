@@ -2,6 +2,7 @@
 /pokemon emerald/
 /.local/
 *.gba
+*.gba.gz
 *.agb
 *.srm
 *.sav
@@ -11,6 +12,10 @@
 
 # Build tools and outputs
 /node_modules/
+/.wrangler/
+**/.wrangler/
+.dev.vars
+.dev.vars.*
 /dist/
 /build/
 /apps/harness/core/

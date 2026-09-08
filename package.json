@@ -3,9 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs --local-fixture",
     "build": "node scripts/build-emulator.mjs",
     "prepare:roms": "node scripts/prepare-roms.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "prepare:site": "node scripts/prepare-site.mjs",
+    "relay:dev": "wrangler dev --config services/relay/wrangler.jsonc --local",
+    "relay:types": "wrangler types --config services/relay/wrangler.jsonc services/relay/worker-configuration.d.ts",
+    "relay:check": "tsc -p services/relay/tsconfig.json",
+    "relay:dry-run": "wrangler deploy --config services/relay/wrangler.jsonc --dry-run",
+    "relay:deploy": "wrangler deploy --config services/relay/wrangler.jsonc",
+    "test:relay": "node --test tests/relay/*.test.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260908.1",
+    "typescript": "7.0.2",
+    "wrangler": "4.130.0",
+    "ws": "8.21.3"
   }
 }

@@ -1,14 +1,36 @@
 # Quetzal in the browser: feasibility and implementation plan
 
-Research date: 2026-09-08. Status: proposed architecture; no runtime proof yet.
+Research date: 2026-09-08. Current status: browser boot, solo save/refresh and
+initial local in-game multiplayer confirmed. Internet play remains unverified.
+
+**Implementation correction, 2026-09-08:** the original RFU premise below was
+too broad. The current Quetzal co-op test must use gpSP's **Pokémon Gen3 link
+cable** option (`mul_poke`), not the Emerald RFU default. The frontend previously
+forced RFU and the user saw a stuck host game with advancing emulator frames and
+zero packets. Both browser and native baseline configurations are now corrected.
+See `experiments/003-link-mode-correction.md` for source evidence, verification,
+and the user's successful in-game retest. Longer-session acceptance remains open.
+The existing netpacket frontend architecture
+still applies; focus protocol analysis on `serial.c` and `serial_proto.c`.
 
 ## 1. The intended experience
 
-A player opens a link, selects a compatible Emerald ROM on their device, and
-starts Quetzal without installing an emulator. They can create or join a friend
-lobby, play their own trainer, leave, and return to their progress. Eventually
-an account or private recovery code restores saves on another device. That new
-device still needs the player's ROM.
+A player opens the site, chooses New game or Continue, and plays Quetzal without
+installing an emulator or supplying a ROM. The website delivers the supported
+prepatched Quetzal ROM automatically. They can create or join a friend lobby,
+play their own trainer, leave, and return to their progress. Eventually an account
+or private recovery code restores saves on another device, which automatically
+loads the matching game build from the website.
+
+Product decision, 2026-09-08: the user explicitly removed Emerald patching and
+ROM selection/upload from the website and chose operator-hosted Quetzal content.
+This replaces the original bring-your-own-ROM architecture. Existing local input
+and BPS experiments remain historical reproducibility records, not product work
+to finish. Automatic website-provided content loading is now implemented and
+verified in the deployment package and published at
+https://quetzal-playtest.rikcroy.workers.dev on 2026-09-08. Hosted WebSocket and
+real WASM cable handshake tests passed; two-device gameplay acceptance remains
+open. See `experiments/004-websocket-relay.md` for measured evidence.
 
 Quetzal provides the game, multiplayer mechanics, and gameplay improvements;
 this project supplies browser emulation, connectivity, persistence, and the
@@ -74,16 +96,18 @@ with our proposed browser build. [S8]
 ## 3. Proposed architecture
 
 ```text
-Browser A                                      Browser B
-local ROM -> patch -> gpSP WASM                 local ROM -> patch -> gpSP WASM
-                     |                                              |
-              netpacket adapter                              netpacket adapter
-                     |                                              |
-                     +----- local channel / WSS room relay ---------+
+             Website content assets: pinned Quetzal ROM + manifest
+                         | HTTPS                  | HTTPS
+                    Browser A                Browser B
+                verify -> gpSP WASM       verify -> gpSP WASM
+                         |                        |
+                  netpacket adapter        netpacket adapter
+                         +-- local / WSS relay ---+
 
 Each browser: trainer save -> IndexedDB -> optional cloud save API
 Backend: Worker API + one Durable Object per room
 Later: D1 metadata/ownership, R2 versioned save blobs
+Game assets: separate versioned content storage and browser cache
 ```
 
 The server routes emulator packets and manages membership. Game logic runs in
@@ -139,24 +163,39 @@ Shared-memory/threaded configurations require cross-origin isolation headers
 and introduce deployment/browser constraints. Do not require them unless the
 simple path fails. They also do not defeat OS suspension of a browser. [S10]
 
-### ROM and patch flow
+### Website-provided game content
 
-Accept a local `.gba` first. Hash its bytes; match an explicitly supported base
-revision rather than accepting the extension or title header alone. Apply a
-verified patch locally and verify the output hash. Record base hash, patch hash,
-language, game version, core build, BIOS mode, serial mode, and relevant options
-as a compatibility manifest. Actual hashes must come from the selected release
-and local verification; they are not established by this research.
+The operator supplies the already verified Quetzal English Alpha 8.4 ROM as a
+hosting artifact. Keep the binary outside git and separate from personal save
+storage. The website downloads it over HTTPS; the emulator continues running
+locally in each player's browser. No user ROM upload API, file picker, Emerald
+validation flow, patch selector or browser BPS application belongs in this flow.
+Save and keybind import/export remain supported.
 
-Support browser-side patching when the patch's distribution terms permit it;
-otherwise accept a separately selected patch or supported prepatched local ROM.
-Do not assume another site's patcher permits reuse of its assets or service.
-The normal production flow should not upload game bytes. [S2]
+Use a release manifest containing game/version ID, language, asset URL, byte
+length, SHA-256, core build, BIOS mode and serial settings. Initial game bytes are
+32 MiB with SHA-256
+`e9fc9cf506ad11db7642e7d65774e2bb0e5f174eb9aceda725cd961ab9aee070`.
+Verify size and hash before loading the core. Provide download/loading progress,
+retry after a failed or incomplete download, and a clear unavailable-build state.
+Use the existing bundled BIOS and verified `mul_poke` setting.
 
-Test gpSP's bundled BIOS first. Its options acknowledge compatibility differences
-with the original BIOS. If a user-supplied BIOS proves necessary, that changes
-the promised Emerald-only onboarding and must be reported. Explicitly test RFU
-mode rather than trusting ROM auto-detection; record RTC behavior as well. [S11]
+Serve content through static/object storage, separate from the multiplayer packet
+relay. Use versioned asset URLs and a browser cache to avoid repeated downloads.
+Plan storage/cache headers and any cross-origin resource headers alongside the
+hosted emulator's isolation requirements. Loading a cached asset must still match
+the requested release. Do not make offline play a release promise without testing.
+
+Pin each save and lobby to its content/core compatibility manifest. Continuing a
+trainer selects its existing build; new releases do not silently replace that
+build or migrate its saves. Reject incompatible lobby joins. Preserve existing
+save keys during the transition from local file loading to website delivery.
+
+Content delivery should be configurable so the operator can replace or withdraw
+a release independently of emulator and save services. If a required build is
+unavailable, explain that and retain save export/recovery; do not delete progress
+or silently substitute another ROM. The user has explicitly chosen this content
+distribution model; recording that decision does not establish distribution rights.
 
 ### Cloudflare transport
 
@@ -233,11 +272,11 @@ All metrics below are proposed targets, not observed performance.
 | Gate | Work | Required evidence to proceed |
 | --- | --- | --- |
 | 0: Baseline | Pin Quetzal release, core revision, toolchain, settings and content manifest; run two native gpSP instances | Both trainers connect, explore, exercise supported battle/trade flows, save and reload; exact steps recorded |
-| 1: Browser solo | Minimal page, local ROM/patch, WASM input/video/audio | 30 minutes of play including busy overworld and battle scenes at approximately full emulated speed on the target desktop; no persistent audio failure |
+| 1: Browser solo | Automatic pinned ROM download, integrity verification, WASM input/video/audio | Fresh browser starts without a ROM picker; corrupted/interrupted downloads cannot boot; 30 minutes of play including busy overworld and battle scenes at approximately full emulated speed |
 | 2: Durable saves | IndexedDB, completed-save detection, import/export | Save then refresh and restart browser; native/browser save round trip; interrupted writes and quota failure preserve last good revision |
 | 3: Local wireless | Two isolated instances, then two browser windows with BroadcastChannel or MessagePorts | Two different trainers see each other; 30-minute session; supported shared interactions; save/reload/rejoin; packet and timing traces |
 | 4: Internet wireless | Local WSS-compatible relay, then Cloudflare relay | Two physical devices on separate networks complete a 60-minute session and return to their saves; reproduce on more than one session |
-| 5: Usable private alpha | Room codes, invite links, controls, fullscreen, compatibility errors, guided disconnect recovery | Two users can independently load ROMs, join, play, save, leave, and rejoin without developer assistance |
+| 5: Usable private alpha | New game / Continue, automatic content loading, room codes, invite links, controls, fullscreen, compatibility errors, guided disconnect recovery | Two users can open the website, start or resume, join, play, save, leave, and rejoin without supplying game files or developer assistance |
 | 6: Cross-device progress | Private recovery codes, then optional account linking, cloud version history | Restore on a fresh browser; retry uploads safely; simulate concurrent edits, offline work, revoked credentials and rollback |
 | 7: Broader release | Mobile support, accessibility, four-player tests, upgrades and operational hardening | Device matrix and longer game-progression tests pass; no claim of full-game compatibility based only on early-game testing |
 
@@ -303,9 +342,9 @@ current pricing at deployment; no dollar estimate is established here.
 
 Before distributing the browser emulator, preserve gpSP's GPL notices and make
 the corresponding modified source/build materials available under applicable
-terms. Audit linked dependencies and patch distribution separately. This is a
-release engineering requirement, not evidence that the patch is freely
-redistributable. [S16]
+terms. Track game-content distribution separately from the emulator's licensing;
+the chosen website-hosted content model does not change the emulator's source and
+notice requirements. [S16]
 
 Friends and avatars are ordinary later application work. Spectating is a
 separate design task: streaming a player's rendered view may be simpler than
@@ -326,11 +365,10 @@ apps/web/                        # user-facing product after feasibility gates
 tests/fixtures/                  # synthetic/homebrew only
 ```
 
-Only create these directories when implementation needs them. Next session
-should inspect installed build tools and arrange local test inputs; it should
-not scaffold an account dashboard. A supplied compatible ROM and selected patch
-will be needed to claim a successful Quetzal runtime test. No such files were
-present in the initial repository.
+Only create these directories when implementation needs them. Local inputs,
+the WASM build and initial local gameplay already work. Next, implement the
+WebSocket transport and prepare automatic content loading for the first hosted
+player. Preserve the user's saves and leave manual gameplay tests to the user.
 
 ## 9. Research sources
 

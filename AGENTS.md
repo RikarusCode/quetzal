@@ -2,10 +2,18 @@
 
 ## Product intent
 
-Build a website where players select their own compatible Emerald ROM locally,
-apply a supported Quetzal patch, play the full game in the browser, and connect
+Build a website where players open the site and play the full Quetzal game,
+with a pinned, prepatched ROM supplied automatically by the website. Connect
 independent trainers through shared lobbies. Preserve progress locally and,
 later, through private recovery codes and optional accounts.
+
+Explicit product decision (2026-09-08): remove Emerald patching and user ROM
+selection/upload from the planned website. The user chose website-provided
+Quetzal content and acknowledged distribution concerns. Do not reintroduce
+bring-your-own-ROM onboarding as a requirement. The existing picker and loopback
+fixture were prototype tools. Automatic loading is now implemented for the
+packaged website and local development. The playtest is deployed at
+https://quetzal-playtest.rikcroy.workers.dev (2026-09-08).
 
 Read `docs/IMPLEMENTATION_PLAN.md` before implementing. It contains the research,
 architecture, milestone acceptance criteria, and unresolved decisions.
@@ -21,9 +29,21 @@ Browser boot and new-game input have been visually verified. The core smoke
 test passes for video/audio, two isolated instances and packet lifecycle.
 Native RetroArch boot and a direct two-instance native core harness also work.
 The user reported a successful browser save -> refresh test on 2026-09-08.
-Actual native/browser in-game multiplayer remains UNVERIFIED. The user is
+The user confirmed browser in-game multiplayer works after the link-mode fix
+on 2026-09-08. This is an initial local co-op success; session duration, shared
+battle/trade flows and multiplayer save/rejoin have not yet been reported.
+Native in-game multiplayer and internet play remain unverified. The user is
 handling manual gameplay testing; do not spend turns
 manually progressing trainers unless requested. See `docs/TESTING.md`.
+
+Configuration correction (2026-09-08): the initial frontend forced RFU, but
+Quetzal co-op needs Pokémon Gen3 link-cable mode (`gpsp_serial=mul_poke`).
+User reported host gameplay stuck with frames still advancing and zero packets.
+The rebuilt frontend now selects `mul_poke`; the actual WASM serial controller
+passes a two-core parent/child handshake, packet receive and continued-frame test.
+The user subsequently confirmed the in-game retest works. Native baseline
+scripts now use the same corrected mode.
+The old RFU-first research assumption must not be treated as established fact.
 
 Initial assumptions, pending user preferences: desktop Chrome/Edge, two players,
 independent trainer saves usable solo, private friend lobbies. Treat these as
@@ -53,17 +73,31 @@ successful build or packet echo as proof that the game works.
   is a separate research problem. Disable time manipulation while linked.
 - Keep room identity, trainer/save ownership, and connection identity separate.
 - Room codes must not authorize access to a player's private cloud saves.
-- Keep ROMs, BIOS dumps, patched ROMs, personal saves, and credentials out of git,
-  server uploads, fixtures, and logs. Use synthetic/homebrew fixtures in CI.
-- Verify patch redistribution terms before bundling a patch; allow local patch
-  selection if needed. Preserve emulator licensing and corresponding source.
+- Keep ROMs, BIOS dumps, personal saves, and credentials out of git and logs.
+  Use synthetic/homebrew fixtures in CI. The operator-supplied patched ROM is
+  a versioned hosting artifact, separate from source control and save storage;
+  it is intentionally served to players. Do not build a user ROM upload endpoint.
+- Preserve emulator licensing and corresponding source. Keep content delivery
+  replaceable without deleting trainer saves or silently upgrading active runs.
 - Report milestone evidence and limitations honestly. Record failed experiments
   and actual metrics so later agents do not repeat unsupported assumptions.
 
 ## Next implementation deliverable
 
-Finish gates 0-3 using the existing harness and the user's manual gameplay
-results. Investigate failed saves or RFU discovery using the packet diagnostics.
+Record a longer local session and multiplayer save/reload/rejoin with the user's
+manual gameplay testing. Initial local co-op is confirmed; do not repeat manual
+trainer progression or block relay work on re-proving that result. Next engineering
+step was implemented in `services/relay`: a Worker + Durable Object WebSocket
+relay tested in Wrangler's local runtime. It passes device-level WASM handshakes
+with injected RTT through 250 ms. The packaged player automatically loads and
+verifies website-provided game content. See experiment 004 and the relay README.
+The user explicitly authorized Cloudflare sign-in and deployment, then completed
+OAuth. Deployment succeeded on 2026-09-08. Hosted integration tests passed eight
+of nine initially; the connection-opening timeout passed on targeted rerun.
+Real WASM cable handshakes passed through the hosted relay, including injected
+RTT through 250 ms. See experiment 004 for evidence and the deployment version.
+Next: user-led gameplay on two devices, preferably separate networks. Hosted
+device handshakes do not establish sustained internet gameplay compatibility.
 Do not call the local BroadcastChannel connection internet multiplayer. Current
 save persistence uses a stability heuristic; game-aware completion detection
 and same-slot multi-writer protection still need work. Accounts, friends,

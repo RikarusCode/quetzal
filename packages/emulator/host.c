@@ -37,7 +37,7 @@ static bool environment(unsigned cmd, void *data) {
     case RETRO_ENVIRONMENT_GET_VARIABLE: {
       struct retro_variable *v = data; v->value = NULL;
       if (!strcmp(v->key,"gpsp_bios")) v->value = "builtin";
-      if (!strcmp(v->key,"gpsp_serial")) v->value = "rfu";
+      if (!strcmp(v->key,"gpsp_serial")) v->value = "mul_poke";
       if (!strcmp(v->key,"gpsp_rtc")) v->value = "enabled";
       if (!strcmp(v->key,"gpsp_rtc_time_source")) v->value = "system";
       if (!strcmp(v->key,"gpsp_sound_rate")) v->value = "32768";
@@ -81,6 +81,11 @@ EMSCRIPTEN_KEEPALIVE unsigned host_audio_frames(void) { return sample_frames; }
 EMSCRIPTEN_KEEPALIVE void *host_save(void) { return retro_get_memory_data(RETRO_MEMORY_SAVE_RAM); }
 EMSCRIPTEN_KEEPALIVE unsigned host_save_size(void) { return retro_get_memory_size(RETRO_MEMORY_SAVE_RAM); }
 EMSCRIPTEN_KEEPALIVE unsigned host_frames(void) { return frame_count; }
+// Read-only frontend diagnostics; also used by the device-level regression test.
+extern int serial_mode;
+extern uint16_t io_registers[512];
+EMSCRIPTEN_KEEPALIVE int host_serial_mode(void) { return serial_mode; }
+EMSCRIPTEN_KEEPALIVE void *host_io_registers(void) { return io_registers; }
 EMSCRIPTEN_KEEPALIVE int host_has_network(void) { return network.start && network.receive; }
 EMSCRIPTEN_KEEPALIVE int host_link_start(unsigned id) {
   if (!loaded || linked || !network.start) return 0;

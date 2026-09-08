@@ -70,7 +70,7 @@ class Core:
             return C.cast(data,C.POINTER(C.c_uint))[0] == 2
         if command == 15:
             v = C.cast(data,C.POINTER(Variable)).contents
-            v.value = {b'gpsp_bios':b'builtin',b'gpsp_drc':b'disabled',b'gpsp_serial':b'rfu',
+            v.value = {b'gpsp_bios':b'builtin',b'gpsp_drc':b'disabled',b'gpsp_serial':b'mul_poke',
                        b'gpsp_rtc':b'enabled',b'gpsp_rtc_time_source':b'system',
                        b'gpsp_frameskip':b'disabled',b'gpsp_sound_rate':b'32768'}.get(v.key)
             return v.value is not None

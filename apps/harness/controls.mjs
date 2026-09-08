@@ -2,7 +2,18 @@ export const ACTIONS=[['up','Up',4],['down','Down',5],['left','Left',6],['right'
 export const DEFAULT_BINDINGS={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',a:'KeyX',b:'KeyZ',start:'Enter',select:'ShiftRight',l:'KeyA',r:'KeyS'};
 const STORAGE_KEY='quetzal.keyboard.v1';
 export function allowedKey(code){return /^(Key[A-Z]|Digit[0-9]|Arrow(Up|Down|Left|Right)|Space|Enter|Shift(Left|Right)|Backspace|Tab|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|Backquote|Numpad[0-9])$/.test(code);}
-export function validBindings(value){return !!value && ACTIONS.every(([id])=>allowedKey(value[id])) && new Set(ACTIONS.map(([id])=>value[id])).size===ACTIONS.length;}
+export function validBindings(value){return !!value && typeof value==='object' && !Array.isArray(value) && Object.keys(value).length===ACTIONS.length && ACTIONS.every(([id])=>Object.hasOwn(value,id)&&typeof value[id]==='string'&&allowedKey(value[id])) && new Set(ACTIONS.map(([id])=>value[id])).size===ACTIONS.length;}
+export function exportBindings(bindings){
+  if(!validBindings(bindings))throw Error('Invalid keyboard bindings.');
+  return JSON.stringify({format:'quetzal-keybindings',version:1,bindings},null,2)+'\n';
+}
+export function importBindings(text){
+  if(text.length>16384)throw Error('Keybind files must be smaller than 16 KiB.');
+  let data;try{data=JSON.parse(text);}catch{throw Error('Choose a valid keybind JSON file exported from Quetzal.');}
+  if(data?.format!=='quetzal-keybindings'||data.version!==1)throw Error('Unsupported keybind file. Expected Quetzal keybindings version 1.');
+  if(!validBindings(data.bindings))throw Error('The file must assign one supported, unique key to each of the ten controls.');
+  return {...data.bindings};
+}
 export function rebind(bindings,action,code){
   if(!ACTIONS.some(([id])=>id===action)||!allowedKey(code))throw Error('Choose a letter, number, arrow, or another standard keyboard key.');
   const result={...bindings};const occupied=ACTIONS.find(([id])=>id!==action && bindings[id]===code);
@@ -35,6 +46,19 @@ export function setupControls({screen,send,isLoaded}){
   dialog.addEventListener('close',()=>{capture=null;release();render();if(isLoaded())screen.focus();});
   dialog.addEventListener('cancel',e=>{if(capture){e.preventDefault();capture=null;render();$('binding-status').textContent='Binding change canceled.';}});
   $('reset-controls').onclick=()=>{release();capture=null;bindings={...DEFAULT_BINDINGS};render();persist('Default controls restored.');};
+  $('export-controls').onclick=()=>{
+    capture=null;release();render();const url=URL.createObjectURL(new Blob([exportBindings(bindings)],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download='quetzal-keybindings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $('binding-status').textContent='Keybindings exported.';
+  };
+  $('import-controls-button').onclick=()=>{capture=null;release();render();$('import-controls').click();};
+  $('import-controls').onchange=async()=>{
+    try{const file=$('import-controls').files[0];if(!file)return;
+      if(file.size>16384)throw Error('Keybind files must be smaller than 16 KiB.');
+      const next=importBindings(await file.text());release();capture=null;bindings=next;render();persist('Keybindings imported and saved.');
+    }catch(error){$('binding-status').textContent=error.message;}
+    finally{$('import-controls').value='';}
+  };
   window.addEventListener('keydown',e=>{
     if(dialog.open){
       if(!capture)return;

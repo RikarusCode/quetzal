@@ -28,8 +28,9 @@ for(let i=0;i<sources.length;i++) {
 const out=resolve('apps/harness/core');mkdirSync(out,{recursive:true});
 execFileSync(python,[emcc,...objects,'-O3','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker,node',
   '-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=134217728','-sSTACK_SIZE=1048576','-sFORCE_FILESYSTEM=1',
-  '-sEXPORTED_RUNTIME_METHODS=FS,ccall,HEAPU8,HEAPU16,HEAP16','-sEXPORTED_FUNCTIONS=_malloc,_free',
+  // Exercise the actual serial controller and packet path without gameplay automation.
+  '-sEXPORTED_RUNTIME_METHODS=FS,ccall,HEAPU8,HEAPU16,HEAP16','-sEXPORTED_FUNCTIONS=_malloc,_free,_write_siocnt,_update_serial',
   '-o',resolve(out,'gpsp.mjs')],{cwd:core,stdio:'inherit',env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')}});
 copyFileSync(resolve(core,'COPYING'),resolve(out,'COPYING'));
-writeFileSync(resolve(out,'build.json'),JSON.stringify({core:'gpSP',commit:sha,emscripten:'6.0.9',dynarec:false,bios:'builtin',serial:'rfu'},null,2)+'\n');
+writeFileSync(resolve(out,'build.json'),JSON.stringify({core:'gpSP',commit:sha,emscripten:'6.0.9',dynarec:false,bios:'builtin',serial:'mul_poke'},null,2)+'\n');
 console.log('Built apps/harness/core/gpsp.mjs and gpsp.wasm');

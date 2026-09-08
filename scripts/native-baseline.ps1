@@ -6,7 +6,7 @@ New-Item -ItemType Directory -Force "$taskDir/saves","$taskDir/states","$taskDir
 $taskPath = $taskDir.Replace('\','/')
 @"
 gpsp_bios = "builtin"
-gpsp_serial = "rfu"
+gpsp_serial = "mul_poke"
 gpsp_drc = "disabled"
 gpsp_rtc = "enabled"
 gpsp_rtc_time_source = "system"
