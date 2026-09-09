@@ -4,8 +4,7 @@ A browser player for **Pokémon Quetzal**, the Pokémon Emerald ROM hack with
 multiplayer and expanded gameplay features. Play solo or connect with friends
 through shared rooms, with local saves and an interface built around the game.
 
-[Play Quetzal](https://quetzal.deployhost.workers.dev). The site loads the supported
-game version automatically.
+The site loads the supported game version automatically.
 
 ## Features
 
