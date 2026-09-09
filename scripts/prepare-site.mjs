@@ -30,6 +30,6 @@ if(!remote){
   execFileSync('git',['-C',resolve('.local/src/gpsp'),'archive','--format=tar','--output',resolve('build/gpsp-source.tar'),build.commit]);
   writeFileSync(resolve(out,'source/gpsp-source.tar.gz'),gzipSync(readFileSync('build/gpsp-source.tar')));
 }
-for(const [src,name] of [['packages/emulator/host.c','host.c'],['scripts/build-emulator.mjs','build-emulator.mjs'],['docs/experiments/002-emulator-harness.md','BUILD.md']])copyFileSync(src,resolve(out,'source',name));
+for(const [src,name] of [['packages/emulator/host.c','host.c'],['scripts/build-emulator.mjs','build-emulator.mjs'],['docs/BUILD.md','BUILD.md']])copyFileSync(src,resolve(out,'source',name));
 writeFileSync(resolve(out,'source/README.txt'),`gpSP is GPL-2.0-or-later; see /core/COPYING.\nPinned upstream commit: ${build.commit}\nThe archive contains the upstream source. host.c is our linked frontend.\nBuild with build-emulator.mjs, Emscripten ${build.emscripten}, with source in .local/src/gpsp and SDK in .local/tools/emsdk.\nThe browser JavaScript modules served by this site are their own source. No ROM is included in the source archive.\n`);
 console.log(`Prepared site: game ${compressed.length} compressed bytes; build ${BUILD_ID}`);

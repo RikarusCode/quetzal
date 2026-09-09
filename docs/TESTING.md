@@ -59,7 +59,7 @@ visible; sleeping or background suspension may interrupt multiplayer. A missing
 room should give a clear error, and a fifth player should see Room is full.
 Play solo simply by skipping room creation/joining.
 
-The agent has verified four real WASM serial controllers discovering all peers
+Integration tests verify four real WASM serial controllers discovering all peers
 through the relay, with injected RTT through 250 ms, plus browser room controls.
 This does not prove four-player Quetzal gameplay, battles, trades or long sessions.
 Longer milestone acceptance calls for repeated 60-minute sessions.
@@ -72,9 +72,9 @@ Longer milestone acceptance calls for repeated 60-minute sessions.
 4. Confirm trainer name, location and party match the last completed in-game save.
 
 The save-completion detector still uses a memory-stability heuristic. Closing a
-tab does not preserve the exact instant of play. The user already confirmed an
-initial save/refresh pass and local two-player gameplay on 2026-09-08; do not ask
-an agent to repeat manual trainer progression unless specifically wanted.
+tab does not preserve the exact instant of play. Initial save/refresh and local
+two-player gameplay checks passed on 2026-09-08. Longer-session validation should
+exercise the save and multiplayer scenarios above.
 
 ## Controls
 

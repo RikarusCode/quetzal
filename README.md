@@ -76,7 +76,7 @@ needs internet access, but no local ROM or emulator toolchain. Rerun
 
 To work on the emulator itself, `npm run build` compiles gpSP using the pinned
 source checkout and project-local Emscripten SDK. See the
-[build script](scripts/build-emulator.mjs) and
+[emulator build guide](docs/BUILD.md) and
 [artifact release procedure](deployment/README.md#updating-the-pinned-core-or-game).
 
 ## How it works
@@ -111,7 +111,7 @@ services/deploy-assets/  Versioned build artifact hosting
 scripts/               Build, packaging, and development tools
 deployment/            Artifact checksums and deployment configuration
 tests/                 Unit, integration, and browser UI checks
-docs/                  Architecture, testing guides, and technical records
+docs/                  Emulator build and testing guides
 ```
 
 ## Deployment
@@ -133,8 +133,7 @@ instructions.
 
 - [Testing guide](docs/TESTING.md): gameplay checks, browser controls, and save verification.
 - [Relay reference](services/relay/README.md): networking, local setup, and integration tests.
-- [Implementation plan](docs/IMPLEMENTATION_PLAN.md): architecture decisions and development milestones.
-- [Experiment records](docs/experiments/): technical findings and validation results.
+- [Emulator build guide](docs/BUILD.md): pinned dependencies, compilation, and source distribution.
 
 Desktop Chrome and Edge are the current testing targets. Extended multiplayer
 sessions and broader device compatibility remain areas of active validation.

@@ -64,7 +64,7 @@ const manifest = {
   verification: { byteForByteRoundTrip: true, wrongSourceRejected: true },
   emulator: { coreCommit: null, biosMode: null, serialMode: null, runtimeTested: false },
 };
-const manifestPath = resolve(root, 'docs/experiments/rom-inputs.json');
+const manifestPath = resolve(out, 'rom-inputs.json');
 mkdirSync(dirname(manifestPath), { recursive: true });
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(JSON.stringify({ patchPath, patchBytes: patch.length,

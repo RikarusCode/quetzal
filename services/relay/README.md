@@ -92,32 +92,21 @@ player. Reliable order is preserved. Set 50 ms on both sides for approximately
 
 ## Deployment
 
-The deployment package is reviewed locally with `relay:dry-run`. After authorized
-Cloudflare sign-in, `npm run relay:deploy` publishes `quetzal` on workers.dev.
-If the account already has a Worker with that name, inspect it before replacing it.
-No custom domain, R2 bucket, D1 database, account dashboard or billing-plan change
-is needed by this configuration. Confirm account eligibility during deployment.
-
-The user authorized sign-in/deployment and completed OAuth. The Worker name did
-not exist in the account before the original deployment on 2026-09-08.
 Current address: https://quetzal.deployhost.workers.dev
 
-The user requested the shorter name on 2026-09-08. The name was available; the
-same package was deployed as `quetzal`, version `fc1bbdec-11b7-4919-993e-b50f512fb68d`.
-That Worker rename created a separate room namespace. The later account subdomain
-changes from `rikcroy` to `customsite` to `deployhost` keep the existing `quetzal` Worker and room
-binding. Players should all use the current address and start a new room. The
-old hostname is not guaranteed reachable for save export; use an existing open
-tab or a previously exported backup. Saves cannot migrate automatically.
+Pushes to `main` trigger Cloudflare Workers Builds, which packages and checks the
+site before deploying `quetzal`. See the [deployment guide](../../deployment/README.md)
+for configuration and artifact releases. `npm run relay:dry-run` checks the local
+deployment package without publishing it.
 
-Initial v1 version: `12b93203-e445-4af4-9315-3ed265282adc`. All nine initial hosted integration test
-cases passed, with one initial WebSocket-opening timeout passing on targeted
-rerun. This includes actual WASM cable handshakes, not sustained Quetzal gameplay.
-See experiment 004 for results and `docs/TESTING.md` for the two-device test.
-See experiment 005 for the four-player v2 update and save-slot changes.
-Original v2 version: `fbb2feac-c1fe-4b23-8fd1-941b389238bc`. Ten hosted relay
-tests and the isolated public-site browser UI scenario passed. Four-player
-in-game Quetzal acceptance remains user-led.
+All players should use the same site address. Changing the account subdomain
+keeps the Worker and Durable Object binding, while deploying a separate Worker
+creates a separate room namespace. Existing room sessions should be closed before
+switching addresses. Game compatibility checks remain tied to the pinned build.
+
+The hosted integration suite covers real WASM cable handshakes and four-player
+packet routing. Sustained gameplay, battles, trades, and save/rejoin flows require
+the scenarios in [the testing guide](../../docs/TESTING.md).
 
 Browser saves are specific to origin: 4173, 8787 and workers.dev have separate
 storage. Export from the old origin and import before Play on the new one. Existing
