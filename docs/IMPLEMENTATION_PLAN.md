@@ -28,8 +28,8 @@ This replaces the original bring-your-own-ROM architecture. Existing local input
 and BPS experiments remain historical reproducibility records, not product work
 to finish. Automatic website-provided content loading is now implemented and
 verified in the deployment package and published at
-https://quetzal.customsite.workers.dev on 2026-09-08 (Worker renamed from
-quetzal-playtest, then account subdomain changed from rikcroy to customsite).
+https://quetzal.deployhost.workers.dev on 2026-09-08 (Worker renamed from
+quetzal-playtest, then account subdomain changed from rikcroy to customsite to deployhost).
 Browser-local saves require export/import across origins; old URLs are not
 guaranteed reachable after the account subdomain change. Hosted WebSocket and
 real WASM cable handshake tests passed; two-device gameplay acceptance remains

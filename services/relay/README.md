@@ -100,12 +100,12 @@ is needed by this configuration. Confirm account eligibility during deployment.
 
 The user authorized sign-in/deployment and completed OAuth. The Worker name did
 not exist in the account before the original deployment on 2026-09-08.
-Current address: https://quetzal.customsite.workers.dev
+Current address: https://quetzal.deployhost.workers.dev
 
 The user requested the shorter name on 2026-09-08. The name was available; the
 same package was deployed as `quetzal`, version `fc1bbdec-11b7-4919-993e-b50f512fb68d`.
 That Worker rename created a separate room namespace. The later account subdomain
-change from `rikcroy` to `customsite` keeps the existing `quetzal` Worker and room
+changes from `rikcroy` to `customsite` to `deployhost` keep the existing `quetzal` Worker and room
 binding. Players should all use the current address and start a new room. The
 old hostname is not guaranteed reachable for save export; use an existing open
 tab or a previously exported backup. Saves cannot migrate automatically.

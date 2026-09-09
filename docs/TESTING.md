@@ -1,8 +1,8 @@
 # Manual gameplay tests
 
-Hosted site: https://quetzal.customsite.workers.dev
+Hosted site: https://quetzal.deployhost.workers.dev
 
-The account subdomain changed from `rikcroy` to `customsite`. Browser saves and
+The account subdomain changed from `rikcroy` to `customsite`, then `deployhost`. Browser saves and
 settings do not migrate between these addresses. Import previously exported
 saves before Play. If an old-origin tab is still open, export there before closing
 it; renaming the account does not guarantee the old URL remains reachable.

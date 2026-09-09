@@ -1,6 +1,6 @@
 # GitHub → Cloudflare deployments
 
-The production Worker is `quetzal`, served at https://quetzal.customsite.workers.dev.
+The production Worker is `quetzal`, served at https://quetzal.deployhost.workers.dev.
 Cloudflare Workers Builds should watch
 `RikarusCode/quetzal`, production branch `main`, with these settings:
 
@@ -14,7 +14,7 @@ Cloudflare Workers Builds should watch
 | Build token | Cloudflare-generated token for this Worker |
 
 Cloudflare installs dependencies from the lockfile. Builds download pinned binary
-inputs from `quetzal-assets.customsite.workers.dev`, validate their sizes and SHA-256
+inputs from `quetzal-assets.deployhost.workers.dev`, validate their sizes and SHA-256
 hashes, assemble the site, type-check the relay and run unit tests. Only a successful
 build proceeds to deploy. GitHub contains source and `assets-lock.json`, **no ROM**.
 The existing `.gitignore` excludes ROMs, saves, binaries and generated site files.
