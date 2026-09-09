@@ -1,6 +1,6 @@
 {
   "build": "quetzal-8v4-e9fc9cf506ad11db-gpsp-8d268a6-mul_poke-v2",
-  "origin": "https://quetzal-assets.rikcroy.workers.dev/",
+  "origin": "https://quetzal-assets.customsite.workers.dev/",
   "sources": {
     "packages/emulator/host.c": {
       "size": 5306,

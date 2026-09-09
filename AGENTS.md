@@ -13,10 +13,15 @@ Quetzal content and acknowledged distribution concerns. Do not reintroduce
 bring-your-own-ROM onboarding as a requirement. The existing picker and loopback
 fixture were prototype tools. Automatic loading is now implemented for the
 packaged website and local development. The playtest is deployed at
-https://quetzal.rikcroy.workers.dev (2026-09-08). The user requested the Worker
-name `quetzal`; it is now the configured deployment target. The old
-`quetzal-playtest` Worker is retained for save export, not redirected or deleted.
-The new origin has separate browser saves and a separate room namespace.
+https://quetzal.customsite.workers.dev (2026-09-08). The user requested the Worker
+name `quetzal`, then changed the account subdomain from `rikcroy` to `customsite`.
+The asset host is `quetzal-assets.customsite.workers.dev`; keep its URL in the
+artifact lock and packaging script aligned. Runtime URLs use the current origin.
+The old `quetzal-playtest` Worker has not been deleted, but old `rikcroy` hostnames
+are not guaranteed reachable after the account rename. Saves/settings stay tied
+to each browser origin; migration requires export/import. The account rename
+keeps the `quetzal` Worker and room binding; the earlier Worker rename created a
+separate room namespace. Historical experiment URLs record their original dates.
 
 Read `docs/IMPLEMENTATION_PLAN.md` before implementing. It contains the research,
 architecture, milestone acceptance criteria, and unresolved decisions.

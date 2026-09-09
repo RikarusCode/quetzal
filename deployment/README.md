@@ -1,6 +1,7 @@
 # GitHub → Cloudflare deployments
 
-The production Worker is `quetzal`. Cloudflare Workers Builds should watch
+The production Worker is `quetzal`, served at https://quetzal.customsite.workers.dev.
+Cloudflare Workers Builds should watch
 `RikarusCode/quetzal`, production branch `main`, with these settings:
 
 | Setting | Value |
@@ -13,7 +14,7 @@ The production Worker is `quetzal`. Cloudflare Workers Builds should watch
 | Build token | Cloudflare-generated token for this Worker |
 
 Cloudflare installs dependencies from the lockfile. Builds download pinned binary
-inputs from `quetzal-assets.rikcroy.workers.dev`, validate their sizes and SHA-256
+inputs from `quetzal-assets.customsite.workers.dev`, validate their sizes and SHA-256
 hashes, assemble the site, type-check the relay and run unit tests. Only a successful
 build proceeds to deploy. GitHub contains source and `assets-lock.json`, **no ROM**.
 The existing `.gitignore` excludes ROMs, saves, binaries and generated site files.
@@ -23,6 +24,13 @@ modify it. It contains the already-public game file and emulator build artifacts
 including corresponding source and license. It is not private ROM storage.
 Players continue downloading the game from the main site's packaged assets.
 No runtime dependency on the asset Worker or external browser request is added.
+
+If the account's workers.dev subdomain changes, update the artifact origin in
+`assets-lock.json` and `scripts/deploy-assets.mjs` together. The player and relay
+derive their URLs and allowed production origin from the current request, so
+they do not need a hard-coded hostname change. Browser saves and settings remain
+bound to the old origin. Import exported saves and keybindings on the new site;
+reapply other preferences as needed.
 
 ## Updating the pinned core or game
 

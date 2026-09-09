@@ -1,10 +1,12 @@
 # Manual gameplay tests
 
-Hosted site: https://quetzal.rikcroy.workers.dev
+Hosted site: https://quetzal.customsite.workers.dev
 
-Moving from the previous `quetzal-playtest.rikcroy.workers.dev` address: export
-your saves there and import them here before Play. The old site is still available
-for that purpose. All players should use the new address and create a new room.
+The account subdomain changed from `rikcroy` to `customsite`. Browser saves and
+settings do not migrate between these addresses. Import previously exported
+saves before Play. If an old-origin tab is still open, export there before closing
+it; renaming the account does not guarantee the old URL remains reachable.
+All players should use the new address and create a new room.
 
 Save and export a backup before refreshing an older build. Everyone should refresh
 for the four-player protocol update. If storage asks you to close other Quetzal

@@ -27,7 +27,7 @@ export async function fetchDeployAssets(out){
 // Operator-only: package the pinned binary inputs once, outside GitHub.
 if(process.argv.includes('--package')){
   const files=['core/gpsp.mjs','core/gpsp.wasm','core/COPYING','core/build.json',`game/quetzal-${ROM_SHA256.slice(0,16)}.gba.gz`,'source/gpsp-source.tar.gz','source/host.c','source/build-emulator.mjs','source/BUILD.md','source/README.txt'];
-  const lock={build:BUILD_ID,origin:'https://quetzal-assets.rikcroy.workers.dev/',sources:{},files:{}};
+  const lock={build:BUILD_ID,origin:'https://quetzal-assets.customsite.workers.dev/',sources:{},files:{}};
   for(const path of ['packages/emulator/host.c','scripts/build-emulator.mjs']){
     const bytes=sourceBytes(path);lock.sources[path]={size:bytes.length,sha256:digest(bytes)};
   }
