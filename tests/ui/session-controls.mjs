@@ -32,14 +32,33 @@ try{
   assert.match(await host.locator('#room-help-text').textContent(),/host should then enable Multiplayer/);
   await host.locator('#room-help-button').focus();await host.keyboard.press('Escape');assert.equal(await host.locator('#room-help-text').isVisible(),false);
   await play(host);
+  // Play alone starts actual audio at the fresh-profile default, before any
+  // interaction with the volume popover or game canvas.
+  await host.waitForFunction(()=>window.testAudio[0]?.context.state==='running'&&window.harnessStats?.audio?.renderedSamples>1000);
+  assert.equal(await host.evaluate(()=>window.testAudio[0].gain.gain.value),.5);
+  assert.equal(await host.locator('#volume').inputValue(),'50');
+  assert.equal(await host.locator('#mute').getAttribute('aria-pressed'),'false');
+  const locked=await context.newPage();await open(locked);await locked.locator('#play').click();
+  await waitText(locked,'#status','open in another tab');
+  await locked.waitForFunction(()=>window.testAudio[0]?.context.state==='closed');await locked.close();
   for(const id of ['host','show-join','join'])assert.equal(await host.locator('#'+id).isEnabled(),true);
   await host.locator('#sound').click();await host.locator('#volume-popover').waitFor({state:'visible'});
+  const audibleIcon=await host.locator('#volume-symbol').getAttribute('d');
+  const iconColor=await host.locator('#mute').evaluate(el=>getComputedStyle(el).color);
+  // A suspended device must resume from the slider interaction itself.
+  await host.evaluate(()=>window.testAudio[0].context.suspend());
   await host.locator('#volume').fill('25');
-  await host.waitForFunction(()=>Math.abs(window.testAudio[0]?.gain.gain.value-.25)<.001);
+  await host.waitForFunction(()=>window.testAudio[0].context.state==='running'&&Math.abs(window.testAudio[0]?.gain.gain.value-.25)<.001);
+  assert.equal(await host.evaluate(()=>document.activeElement.id),'volume');
   assert.equal(await host.locator('#volume-value').textContent(),'25%');
   await host.locator('#mute').click();assert.equal(await host.locator('#volume').inputValue(),'0');
   await host.waitForFunction(()=>window.testAudio[0].gain.gain.value<.001);
+  assert.notEqual(await host.locator('#volume-symbol').getAttribute('d'),audibleIcon);
+  assert.equal(await host.locator('#mute').getAttribute('aria-label'),'Unmute');
+  assert.equal(await host.locator('#mute').evaluate(el=>getComputedStyle(el).color),iconColor);
   await host.locator('#mute').click();assert.equal(await host.locator('#volume').inputValue(),'25');
+  assert.equal(await host.locator('#volume-symbol').getAttribute('d'),audibleIcon);
+  assert.equal(await host.locator('#mute').getAttribute('aria-label'),'Mute');
   await mkdir('.local/ui',{recursive:true});await host.screenshot({path:'.local/ui/volume.png'});
   await host.keyboard.press('Escape');assert.equal(await host.locator('#volume-popover').isHidden(),true);
   await host.locator('#end-session').click();assert.match(await host.locator('#end-warning').textContent(),/Save in Quetzal.*Saved locally/);
@@ -81,6 +100,13 @@ try{
   const tip=await host.locator('#room-help-text').boundingBox();assert.ok(tip.x>=0&&tip.x+tip.width<=390);
   await host.locator('#sound').click();const volume=await host.locator('#volume-popover').boundingBox();assert.ok(volume.x>=0&&volume.x+volume.width<=390);
   await end(host);await end(guest);
+  // An explicitly saved mute preference is respected on the next page load.
+  await play(host);await host.locator('#sound').click();await host.locator('#mute').click();await end(host);
+  await open(host);await play(host);
+  await host.waitForFunction(()=>window.testAudio[0]?.context.state==='running');
+  assert.equal(await host.evaluate(()=>window.testAudio[0].gain.gain.value),0);
+  assert.equal(await host.locator('#mute').getAttribute('aria-pressed'),'true');
+  await end(host);
   assert.deepEqual(errors,[]);
-  console.log('Passed: real audio gain/mute/persistence, tooltip, session confirmation/cancel/restart, host and guest shutdown, save lock release, active-only reload guard, room button reset, mobile layout. No gameplay performed.');
+  console.log('Passed: automatic 50% audio, focus-independent slider resume, speaker/mute icons, gain and mute persistence, failed-start cleanup, tooltip, session restart/shutdown, save locks, reload guards, room controls and mobile layout. No gameplay performed.');
 }finally{await browser.close();}

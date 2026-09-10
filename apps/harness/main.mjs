@@ -75,6 +75,7 @@ instance.onmessage=({data:m})=>{
   }
   if(m.type==='ready'){
     loaded=true;loading=false;failed=false;networkAvailable=!!m.network;lastFrame=performance.now();$('export').disabled=false;
+    audio.connect();
     window.addEventListener('beforeunload',beforeUnload);
     showLink('idle',m.network?'Solo':'Multiplayer unavailable.');
     $('empty-screen').hidden=true;
@@ -98,6 +99,7 @@ return instance;
 }
 function failStart(message){
   const old=worker;worker=null;old?.terminate();loading=false;failed=false;networkAvailable=false;
+  audio.stop().catch(()=>{});
   unlockSave?.();unlockSave=null;key=null;showLink('idle','Start the game to connect.');$('status').textContent=message;
 }
 setInterval(()=>{
@@ -116,6 +118,7 @@ async function loadRom(rom){
 $('play').onclick=async()=>{
   if(loaded||loading||ending)return;
   loading=true;failed=false;networkAvailable=false;syncSessionControls();showLink('idle','Starting game…');
+  audio.start();
   try{
     const slot=slots.current();unlockSave=await lockSlot(TARGET,slot.id);key=slotKey(TARGET,slot.id);
     presenter.clear();startWorker();

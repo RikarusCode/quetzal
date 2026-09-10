@@ -38,11 +38,12 @@ try{
       const frames=window.profile.frames.filter(([at])=>at>window.profile.firstFrame+1000),intervals=frames.slice(1).map((f,i)=>f[0]-frames[i][0]).sort((a,b)=>a-b);
       return {kind,bootMs:window.profile.firstFrame-mark,framesDeliveredPerSecond:(frames.length-1)*1000/(frames.at(-1)[0]-frames[0][0]),frameIntervalP95:intervals[Math.floor(intervals.length*.95)],frameIntervalMax:intervals.at(-1),drawMs:frames.reduce((sum,f)=>sum+f[1],0)/frames.length,longTasks:window.profile.long,emulator:window.harnessStats,rom:kind==='restart'?{transferBytes:0,reusedVerifiedContent:true}:rom[0],bufferSources:window.bufferSources};
     },{kind,mark,rom});
+    console.log(JSON.stringify(result));
     assert.equal(result.bufferSources,0,'audio streams continuously instead of allocating per-frame source nodes');
     assert.ok(result.emulator.audio.renderedSamples>100000);assert.ok(result.emulator.audio.queueMs<=100);
     assert.equal(result.emulator.audio.underruns,0,'steady playback must not exhaust its audio buffer');
     assert.equal(result.emulator.audio.overruns,0,'audio device startup must not accumulate stale PCM');
-    runs.push(result);console.log(JSON.stringify(result));
+    runs.push(result);
     if(kind==='cold'){
       // PCM takes a direct worker-to-worklet port, bypassing a blocked UI thread.
       const before=await page.evaluate(()=>window.harnessStats);

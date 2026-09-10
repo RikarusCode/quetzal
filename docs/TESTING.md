@@ -85,7 +85,11 @@ Keyboard settings is at the top right. Fullscreen is next to the Volume button;
 it shows only the game, preserving its aspect ratio. Escape exits. Dialogs do
 not pause the game.
 
-Volume opens a slider with a mute button. The level persists in this browser.
+Play starts audio at 50% on a fresh browser profile. Volume opens a slider with a
+speaker icon that switches to a crossed-out speaker when muted. Changes apply
+without focusing the game. The selected level, including mute, persists in this
+browser. If the browser suspends audio, interacting with the volume controls
+resumes it.
 End session appears beside Play while running. Save in Quetzal, wait for Saved
 locally, then confirm End session. It closes the emulator and leaves the room;
 ending the host's session closes the room for everyone. You can then switch
