@@ -42,6 +42,8 @@ canvas:focus-visible { outline: 1px solid #7c8da6; outline-offset: -1px; }
 .toolbar-actions, .binding-files { display: flex; gap: 8px; flex-wrap: wrap; }
 .toolbar-actions { flex-shrink: 0; }
 .toolbar-actions button { padding: 5px 10px; }
+.toolbar-actions .toolbar-icon { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: transparent; color: var(--muted); }
+.toolbar-actions .toolbar-icon:hover:not(:disabled), .toolbar-actions .toolbar-icon[aria-expanded=true] { background: #262b32; color: var(--text); }
 .control-strip { border-top: 1px solid var(--line); padding: 10px 0 0; }
 #controls-summary { display: flex; gap: 8px 20px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
 kbd { font: 12px ui-monospace, Consolas, monospace; color: #d6dce5; padding: 0 2px; }

@@ -6,8 +6,9 @@ export function setupVolume({isPlaying,onError,send,onStats=()=>{}}){
   function render(){
     slider.value=String(value);$('volume-value').value=`${value}%`;slider.setAttribute('aria-valuetext',value?`${value}%`:'Muted');
     $('mute').setAttribute('aria-pressed',String(value===0));$('mute').setAttribute('aria-label',value===0?'Unmute':'Mute');$('mute').title=value===0?'Unmute':'Mute';
-    $('volume-symbol').setAttribute('d',value===0?'m16 9 5 6m0-6-5 6':'M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14');
-    button.setAttribute('aria-label',value?`Volume: ${value}%`:'Volume: muted');
+    const symbol=value===0?'m16 9 5 6m0-6-5 6':'M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14';
+    $('volume-symbol').setAttribute('d',symbol);$('sound-symbol').setAttribute('d',symbol);
+    button.title=value?`Volume: ${value}%`:'Volume: muted';button.setAttribute('aria-label',button.title);
   }
   function setVolume(next){
     value=Math.max(0,Math.min(100,Number(next)||0));if(value)lastAudible=value;

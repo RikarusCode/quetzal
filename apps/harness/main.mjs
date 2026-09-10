@@ -193,7 +193,7 @@ const roomHelp=$('room-help-button').parentElement;
 roomHelp.addEventListener('pointerleave',()=>roomHelp.classList.remove('dismissed'));
 roomHelp.addEventListener('focusin',()=>roomHelp.classList.remove('dismissed'));
 $('room-help-button').addEventListener('keydown',event=>{if(event.key==='Escape'){roomHelp.classList.add('dismissed');$('room-help-button').blur();}});
-if(!document.fullscreenEnabled){$('fullscreen').disabled=true;$('fullscreen').textContent='Fullscreen unavailable';}
+if(!document.fullscreenEnabled){$('fullscreen').disabled=true;$('fullscreen').title='Fullscreen unavailable';$('fullscreen').setAttribute('aria-label','Fullscreen unavailable');}
 $('fullscreen').onclick=async()=>{
   try{if(document.fullscreenElement===player)await document.exitFullscreen();else await player.requestFullscreen();}
   catch(error){$('status').textContent='Fullscreen unavailable: '+error.message;}
@@ -204,6 +204,9 @@ document.addEventListener('keydown',event=>{
   }
 });
 document.addEventListener('fullscreenchange',()=>{
-  const active=document.fullscreenElement===player;$('fullscreen').textContent=active?'Exit fullscreen':'Fullscreen';
+  const active=document.fullscreenElement===player;
+  $('fullscreen').title=active?'Exit fullscreen (Escape)':'Enter fullscreen';
+  $('fullscreen').setAttribute('aria-label',active?'Exit fullscreen':'Enter fullscreen');
+  $('fullscreen-symbol').setAttribute('d',active?'M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5':'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5');
   $('fullscreen').setAttribute('aria-pressed',String(active));if(loaded)$('screen').focus();
 });
