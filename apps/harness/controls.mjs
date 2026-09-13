@@ -1,3 +1,4 @@
+import {setupGamepadControls} from './gamepad-controls.mjs';
 export const ACTIONS=[['up','Up',4],['down','Down',5],['left','Left',6],['right','Right',7],['a','A · Confirm',8],['b','B · Cancel',0],['start','Start',3],['select','Select',2],['l','L shoulder',10],['r','R shoulder',11]];
 export const DEFAULT_BINDINGS={up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',a:'KeyE',b:'KeyQ',start:'Enter',select:'ShiftRight',l:'ArrowLeft',r:'ArrowRight'};
 const STORAGE_KEY='quetzal.keyboard.v1';
@@ -23,9 +24,21 @@ export function keyLabel(code){return ({ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:
 export function maskFor(held,bindings){return ACTIONS.reduce((mask,[id,,bit])=>held.has(bindings[id])?mask|(1<<bit):mask,0);}
 export function setupControls({screen,send,isLoaded}){
   const $=id=>document.getElementById(id),dialog=$('settings-dialog');let bindings={...DEFAULT_BINDINGS},capture=null;
-  const held=new Set();
+  const held=new Set();let controllerMask=0,lastMask=0,gamepad;
+  const enabled=()=>isLoaded()&&document.hasFocus()&&!document.hidden&&document.activeElement===screen&&!document.querySelector('dialog[open]');
+  function emit(){const mask=enabled()?(maskFor(held,bindings)|controllerMask):0;if(mask!==lastMask){lastMask=mask;send({type:'buttons',mask});}}
   try{const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));if(validBindings(stored))bindings=stored;}catch{}
-  const release=()=>{held.clear();send({type:'release-buttons'});};
+  const release=()=>{held.clear();controllerMask=0;lastMask=0;gamepad?.reset();send({type:'release-buttons'});};
+  gamepad=setupGamepadControls({actions:ACTIONS,dialog,isEnabled:enabled,onMask:mask=>{controllerMask=mask;emit();}});
+  function showPanel(controller){
+    release();capture=null;gamepad.cancel();render();
+    $('keyboard-panel').hidden=controller;$('controller-panel').hidden=!controller;
+    $('keyboard-tab').setAttribute('aria-selected',String(!controller));$('controller-tab').setAttribute('aria-selected',String(controller));
+    $('keyboard-tab').tabIndex=controller?-1:0;$('controller-tab').tabIndex=controller?0:-1;
+    $('reset-controls').hidden=controller;$('reset-controller').hidden=!controller;
+  }
+  $('keyboard-tab').onclick=()=>showPanel(false);$('controller-tab').onclick=()=>showPanel(true);
+  $('controls-tabs').onkeydown=event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const controller=event.key==='End'||(event.key!=='Home'&&$('controller-panel').hidden);showPanel(controller);$(controller?'controller-tab':'keyboard-tab').focus();}};
   function render(){
     $('binding-list').replaceChildren(...ACTIONS.map(([id,label])=>{
       const row=document.createElement('div');row.className='binding-row';const text=document.createElement('span');text.textContent=label;
@@ -61,16 +74,17 @@ export function setupControls({screen,send,isLoaded}){
   };
   window.addEventListener('keydown',e=>{
     if(dialog.open){
+      if($('keyboard-panel').hidden)return;
       if(!capture)return;
       e.preventDefault();e.stopPropagation();if(e.repeat)return;
       if(e.code==='Escape'){capture=null;render();$('binding-status').textContent='Binding change canceled.';return;}
       if(e.ctrlKey||e.metaKey||e.altKey||!allowedKey(e.code)){ $('binding-status').textContent='Use a single key without Ctrl, Alt, or Command. Escape cancels.';return;}
       const action=capture;bindings=rebind(bindings,action,e.code);capture=null;render();persist(`${ACTIONS.find(([id])=>id===action)[1]} set to ${keyLabel(e.code)}. Saved.`);dialog.querySelector(`[data-action="${action}"]`).focus();return;
     }
-    if(!isLoaded()||document.activeElement!==screen||e.ctrlKey||e.metaKey||e.altKey||!Object.values(bindings).includes(e.code))return;
-    e.preventDefault();if(held.has(e.code))return;held.add(e.code);send({type:'buttons',mask:maskFor(held,bindings)});
+    if(!enabled()||e.ctrlKey||e.metaKey||e.altKey||!Object.values(bindings).includes(e.code))return;
+    e.preventDefault();if(held.has(e.code))return;held.add(e.code);emit();
   });
-  window.addEventListener('keyup',e=>{if(held.delete(e.code)){e.preventDefault();send({type:'buttons',mask:maskFor(held,bindings)});}});
+  window.addEventListener('keyup',e=>{if(held.delete(e.code)){e.preventDefault();emit();}});
   screen.addEventListener('blur',release);window.addEventListener('blur',release);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});render();
 }

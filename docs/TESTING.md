@@ -79,11 +79,49 @@ exercise the save and multiplayer scenarios above.
 ## Controls
 
 Click the game to focus it. WASD moves; E is GBA A, Q is B, Enter is Start,
-Right Shift is Select, Left Arrow is L and Right Arrow is R. Keyboard settings changes bindings,
+Right Shift is Select, Left Arrow is L and Right Arrow is R. Controls → Keyboard changes bindings,
 swaps conflicts and supports keybind import/export. Changes persist locally.
-Keyboard settings is at the top right. Fullscreen is next to the Volume button;
+Controls is at the top right. Fullscreen is next to the Volume icon;
 it shows only the game, preserving its aspect ratio. Escape exits. Dialogs do
 not pause the game.
+
+### Controllers
+
+Connect a controller by USB or Bluetooth, press a button, then open **Controls →
+Controller**. Standard layouts map the bottom face button to GBA A, right face to
+B, shoulders to L/R, and D-pad plus left stick to movement. Select/Menu map to
+Select/Start. The UI names face buttons by physical position rather than brand.
+Custom layouts start unmapped; assign each action before playing. Recognized
+standard controllers share a saved profile; custom device mappings are stored
+separately using the browser's device name. Controller exports contain bindings,
+deadzone and the left-stick setting, not trainer saves or keyboard bindings.
+
+For a physical device check:
+
+1. Note the controller model, browser and USB/Bluetooth connection. Verify detection.
+2. Click the game, try D-pad/stick movement and confirm/cancel/menu/shoulder inputs.
+3. Remap a button and a stick direction; reload and verify the settings persist.
+4. Export, restore defaults, then import and verify the layout is restored.
+5. Hold a direction while opening Controls or switching windows. Inputs should
+   stop, and remain released until the controller returns to neutral after refocusing.
+6. Unplug while holding a button. Keyboard input must still work; reconnect and
+   release the controller before resuming. With two controllers connected, only
+   the selected controller should drive this trainer.
+
+Assigning a left-stick axis directly disables its additional movement mapping.
+Increase the deadzone if a stick drifts. Dialogs suppress input, not emulation.
+
+Automated input integration:
+`PLAYWRIGHT_MODULE=<installed playwright index.mjs> node tests/ui/controllers.mjs`.
+Set `UI_TEST_URL` for a packaged/deployed site. This uses synthetic Gamepad API
+snapshots and a controls-only page entry point for input checks, followed by a
+real emulator startup and shoulder-button delivery check in the isolated profile.
+It does not load personal saves or progress a trainer.
+It covers mappings, input merging, focus/dialog release, disconnects, multiple
+devices, imports, persistence, responsive layout and denied API access. It does
+not establish physical controller or driver compatibility.
+
+### Session controls
 
 Play starts audio at 50% on a fresh browser profile. Volume opens a slider with a
 speaker icon that switches to a crossed-out speaker when muted. Changes apply

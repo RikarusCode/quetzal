@@ -8,7 +8,7 @@ import {fetchDeployAssets} from './deploy-assets.mjs';
 const out=resolve('dist/site');mkdirSync(out,{recursive:true});
 const remote=process.argv.includes('--remote');
 if(remote)await fetchDeployAssets(out);
-for(const name of ['index.html','style.css','main.mjs','controls.mjs','volume.mjs','audio-buffer.mjs','audio-worklet.mjs','video.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs','game-content-worker.mjs','game-loader.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
+for(const name of ['index.html','style.css','main.mjs','controls.mjs','gamepad.mjs','gamepad-controls.mjs','volume.mjs','audio-buffer.mjs','audio-worklet.mjs','video.mjs','saves.mjs','save-slots-ui.mjs','emulator-worker.mjs','local-link.mjs','broadcast-room.mjs','websocket-channel.mjs','relay-protocol.mjs','game-content.mjs','game-content-worker.mjs','game-loader.mjs'])copyFileSync(resolve('apps/harness',name),resolve(out,name));
 mkdirSync(resolve(out,'core'),{recursive:true});
 const build=JSON.parse(readFileSync(remote?resolve(out,'core/build.json'):'apps/harness/core/build.json','utf8'));
 if(build.serial!=='mul_poke'||build.commit!=='8d268a6bb2cd799f8f2791ebb544a7ef550cfc6f')throw Error('Rebuild the pinned link-cable core first.');

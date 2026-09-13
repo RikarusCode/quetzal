@@ -14,7 +14,7 @@ The site loads the supported game version automatically.
   a live player roster.
 - **Independent save slots** with custom names, local persistence, save
   import/export, and protection against simultaneous use in another tab.
-- **Configurable keyboard controls**, portable keybind layouts, volume controls,
+- **Keyboard and controller support**, remappable inputs, portable control layouts, volume controls,
   and fullscreen play.
 
 ## Getting started
@@ -33,6 +33,20 @@ Each player controls their own trainer and keeps their own progress. Rooms conne
 running games; they do not share or combine save files. The host leaving closes
 the room. After a guest leaves, remaining players need to rejoin multiplayer
 inside Quetzal.
+
+### Controls
+
+Open **Controls** to configure keyboard or controller bindings. Connect a controller
+by USB or Bluetooth and press a button to make it visible to the browser. Standard
+layouts include D-pad and left-stick movement; the bottom face button confirms and
+the right face button cancels. Bindings use physical positions so labels work across
+controller brands. Other layouts can be mapped manually.
+
+Controller settings include a stick deadzone and separate import/export. Standard
+controllers share a layout; custom devices keep their own mappings. Keyboard
+bindings remain independent. Click the game to play; changing focus or opening a
+dialog releases inputs. Release held controls before resuming. Device availability
+depends on the operating system, browser, and connection method.
 
 ### Saves and sessions
 
